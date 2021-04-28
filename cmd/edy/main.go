@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/hirano00o/dy/meta"
+	"github.com/hirano00o/edy/meta"
 
 	"github.com/urfave/cli/v2"
 )
@@ -48,16 +48,28 @@ func run(args []string) error {
 				Usage:   "Scan specified table",
 				Aliases: []string{"s"},
 				Flags:   baseOptions,
-				Action:  nil,
+				Action:  scanCmd(),
 			},
 			{
 				Name:    "query",
 				Usage:   "Query specified table",
 				Aliases: []string{"q"},
 				Flags:   baseOptions,
-				Action:  nil,
+				Action:  queryCmd(),
 			},
 		},
 	}
 	return app.Run(args)
+}
+
+func queryCmd() cli.ActionFunc {
+	return func(context *cli.Context) error {
+		return nil
+	}
+}
+
+func scanCmd() cli.ActionFunc {
+	return func(context *cli.Context) error {
+		return nil
+	}
 }

@@ -1,6 +1,6 @@
 package meta
 
 const (
-	CliName = "dy"
+	CliName = "edy"
 	Version = "0.1"
 )

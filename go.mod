@@ -1,4 +1,4 @@
-module github.com/hirano00o/dy
+module github.com/hirano00o/edy
 
 go 1.16
 
