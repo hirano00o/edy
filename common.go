@@ -17,7 +17,7 @@ type Edy interface {
 		w io.Writer,
 		tableName string,
 		partitionValue,
-		sortValue string,
+		sortCondition string,
 		filterCondition string,
 	) error
 	DescribeTable(ctx context.Context, w io.Writer, tableName string) error

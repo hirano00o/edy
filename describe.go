@@ -3,10 +3,9 @@ package edy
 import (
 	"context"
 	"fmt"
-	"io"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"io"
 
 	"github.com/hirano00o/edy/client"
 	"github.com/hirano00o/edy/model"
@@ -27,7 +26,7 @@ func describeTable(ctx context.Context, tableName string) (*model.Table, error) 
 	}
 	attr := make(map[string]model.AttributeType)
 	for _, a := range res.Table.AttributeDefinitions {
-		attr[aws.ToString(a.AttributeName)] = model.ConvertToAttributeType(string(a.AttributeType))
+		attr[aws.ToString(a.AttributeName)] = model.AttributeTypeStr(a.AttributeType).Name()
 	}
 	for _, k := range res.Table.KeySchema {
 		name := aws.ToString(k.AttributeName)
@@ -70,18 +69,18 @@ func (i *Instance) DescribeTable(ctx context.Context, w io.Writer, tableName str
 
 	fmt.Fprintf(w, "Table Arn:\t%s\n", t.Arn)
 	fmt.Fprintf(w, "Table Name:\t%s\n", t.Name)
-	fmt.Fprintf(w, "Partition Key:\t%s(%s)\n", t.PartitionKeyName, model.ConvertAttributeTypeToString(t.PartitionKeyType))
+	fmt.Fprintf(w, "Partition Key:\t%s(%s)\n", t.PartitionKeyName, t.PartitionKeyType.String())
 	if len(t.SortKeyName) != 0 {
-		fmt.Fprintf(w, "Sort Key:\t%s(%s)\n", t.SortKeyName, model.ConvertAttributeTypeToString(t.SortKeyType))
+		fmt.Fprintf(w, "Sort Key:\t%s(%s)\n", t.SortKeyName, t.SortKeyType.String())
 	}
 	if len(t.GSI) != 0 {
 		fmt.Fprintf(w, "GSI:\n")
 	}
 	for i := range t.GSI {
 		fmt.Fprintf(w, "\tIndex:\t%s\n", t.GSI[i].Name)
-		fmt.Fprintf(w, "\tPartition Key:\t%s(%s)\n", t.GSI[i].PartitionKeyName, model.ConvertAttributeTypeToString(t.GSI[i].PartitionKeyType))
+		fmt.Fprintf(w, "\tPartition Key:\t%s(%s)\n", t.GSI[i].PartitionKeyName, t.GSI[i].PartitionKeyType.String())
 		if len(t.SortKeyName) != 0 {
-			fmt.Fprintf(w, "\tSort Key:\t%s(%s)\n", t.GSI[i].SortKeyName, model.ConvertAttributeTypeToString(t.GSI[i].SortKeyType))
+			fmt.Fprintf(w, "\tSort Key:\t%s(%s)\n", t.GSI[i].SortKeyName, t.GSI[i].SortKeyType.String())
 		}
 	}
 	fmt.Fprintf(w, "ItemCount:\t%d", t.ItemCount)

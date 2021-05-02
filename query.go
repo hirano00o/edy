@@ -1,12 +1,10 @@
 package edy
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -18,31 +16,87 @@ import (
 	"github.com/hirano00o/edy/model"
 )
 
-func query(ctx context.Context, tableName string, partitionValue string) ([]map[string]interface{}, error) {
+func analyseSortCondition(
+	sortCondition,
+	sortKey string,
+	sortKeyType model.AttributeType,
+) (*expression.KeyConditionBuilder, error) {
+	s := strings.Split(sortCondition, " ")
+	if len(s) > 3 {
+		return nil, fmt.Errorf("invalid condition, specified condition is a lot: %s", sortCondition)
+	} else if len(s) < 2 {
+		return nil, fmt.Errorf("invalid condition, specified condition is insufficient: %s", sortCondition)
+	}
+
+	op, err := model.ConvertToComparisonOperator(s[0])
+	if err != nil {
+		return nil, err
+	}
+	if op == model.BETWEEN {
+		if len(s) != 3 {
+			return nil, fmt.Errorf("invalid condition, specified condition is insufficient: %s", sortCondition)
+		}
+	}
+
+	var c expression.KeyConditionBuilder
+	v1, err := sortKeyType.Value(s[1])
+	if err != nil {
+		return nil, fmt.Errorf("invalid condition, %v", err)
+	}
+
+	switch op {
+	case model.EQ:
+		c = expression.KeyEqual(expression.Key(sortKey), expression.Value(v1.(string)))
+	case model.LE:
+		c = expression.KeyLessThanEqual(expression.Key(sortKey), expression.Value(v1))
+	case model.LT:
+		c = expression.KeyLessThan(expression.Key(sortKey), expression.Value(v1))
+	case model.GE:
+		c = expression.KeyGreaterThanEqual(expression.Key(sortKey), expression.Value(v1))
+	case model.GT:
+		c = expression.KeyGreaterThan(expression.Key(sortKey), expression.Value(v1))
+	case model.BEGINS_WITH:
+		c = expression.KeyBeginsWith(expression.Key(sortKey), v1.(string))
+	case model.BETWEEN:
+		v2, err := sortKeyType.Value(s[2])
+		if err != nil {
+			return nil, fmt.Errorf("invalid condition, %v", err)
+		}
+		c = expression.KeyBetween(expression.Key(sortKey), expression.Value(v1), expression.Value(v2))
+	default:
+		return nil, fmt.Errorf("invalid condition, specified comparison operator can not use: %s", sortCondition)
+	}
+
+	return &c, nil
+}
+
+func query(
+	ctx context.Context,
+	tableName string,
+	partitionValue,
+	sortCondition string,
+) ([]map[string]interface{}, error) {
 	table, err := describeTable(ctx, tableName)
 	if err != nil {
 		return nil, err
 	}
 	cli := ctx.Value(newClientKey).(client.DynamoDB)
 
-	var p expression.ValueBuilder
-	switch table.PartitionKeyType {
-	case model.N:
-		pInt, err := strconv.Atoi(partitionValue)
-		if err != nil {
-			return nil, err
-		}
-		p = expression.Value(pInt)
-	case model.S:
-		p = expression.Value(partitionValue)
-	case model.B:
-		p = expression.Value(bytes.NewBufferString(partitionValue).Bytes())
-	default:
-		p = expression.Value(partitionValue)
+	v, err := table.PartitionKeyType.Value(partitionValue)
+	if err != nil {
+		return nil, err
 	}
 
 	// PartitionKey condition
-	condition := expression.KeyEqual(expression.Key(table.PartitionKeyName), p)
+	condition := expression.KeyEqual(expression.Key(table.PartitionKeyName), expression.Value(v))
+	// SortKey condition
+	if len(sortCondition) != 0 {
+		c, err := analyseSortCondition(sortCondition, table.SortKeyName, table.SortKeyType)
+		if err != nil {
+			return nil, err
+		}
+		condition = condition.And(*c)
+	}
 
 	builder := expression.NewBuilder().WithKeyCondition(condition)
 	expr, err := builder.Build()
@@ -79,13 +133,13 @@ func (i *Instance) Query(
 	w io.Writer,
 	tableName string,
 	partitionValue,
-	sortValue string,
+	sortCondition string,
 	filterCondition string,
 ) error {
 	cli := i.NewClient.CreateInstance()
 	ctx = context.WithValue(ctx, newClientKey, cli)
 
-	res, err := query(ctx, tableName, partitionValue)
+	res, err := query(ctx, tableName, partitionValue, sortCondition)
 	if err != nil {
 		return err
 	}
