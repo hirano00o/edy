@@ -34,13 +34,25 @@ func run(w io.Writer, args []string) error {
 			Aliases: []string{"r"},
 		},
 		&cli.StringFlag{
-			Name:    "profile",
-			Usage:   "AWS profile name",
-			Aliases: []string{"p"},
+			Name:  "profile",
+			Usage: "AWS profile name",
 		},
 		&cli.StringFlag{
 			Name:  "local",
 			Usage: "Connect to localhost of specified port number. --local 8000",
+		},
+	}
+	queryOptions := []cli.Flag{
+		&cli.StringFlag{
+			Name:     "partition",
+			Usage:    "Partition value",
+			Aliases:  []string{"p"},
+			Required: true,
+		},
+		&cli.StringFlag{
+			Name:    "sort",
+			Usage:   "Sort condition and value. --sort \"> 10\"",
+			Aliases: []string{"s"},
 		},
 	}
 	scanQueryOptions := []cli.Flag{
@@ -73,7 +85,7 @@ func run(w io.Writer, args []string) error {
 				Name:    "query",
 				Usage:   "Query specified table",
 				Aliases: []string{"q"},
-				Flags:   append(baseOptions, scanQueryOptions...),
+				Flags:   append(append(baseOptions, queryOptions...), scanQueryOptions...),
 				Action:  queryCmd(w),
 			},
 		},
@@ -82,13 +94,24 @@ func run(w io.Writer, args []string) error {
 }
 
 func queryCmd(w io.Writer) cli.ActionFunc {
-	return func(context *cli.Context) error {
-		return nil
+	return func(ctx *cli.Context) error {
+		c, err := client.New(ctx.Context, getOptions(ctx))
+		if err != nil {
+			return err
+		}
+		return edy.NewEdyClient(c).Query(
+			ctx.Context,
+			w,
+			ctx.String("table-name"),
+			ctx.String("partition"),
+			ctx.String("sort"),
+			ctx.String("filter"),
+		)
 	}
 }
 
 func scanCmd(w io.Writer) cli.ActionFunc {
-	return func(context *cli.Context) error {
+	return func(ctx *cli.Context) error {
 		return nil
 	}
 }
@@ -103,21 +126,21 @@ func describeCmd(w io.Writer) cli.ActionFunc {
 	}
 }
 
-func getOptions(context *cli.Context) map[string]string {
+func getOptions(ctx *cli.Context) map[string]string {
 	o := make(map[string]string)
 
 	// Get endpoint url.
-	if p := context.String("local"); len(p) != 0 {
+	if p := ctx.String("local"); len(p) != 0 {
 		o["local"] = p
 	}
 
 	// Get region.
-	if r := context.String("region"); len(r) != 0 {
+	if r := ctx.String("region"); len(r) != 0 {
 		o["region"] = r
 	}
 
 	// Get profile.
-	if p := context.String("profile"); len(p) != 0 {
+	if p := ctx.String("profile"); len(p) != 0 {
 		o["profile"] = p
 	}
 

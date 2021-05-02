@@ -4,9 +4,9 @@ type Table struct {
 	Arn              string
 	Name             string
 	PartitionKeyName string
-	PartitionKeyType string
+	PartitionKeyType AttributeType
 	SortKeyName      string
-	SortKeyType      string
+	SortKeyType      AttributeType
 	GSI              []*GlobalSecondaryIndex
 	ItemCount        int64
 }
@@ -14,7 +14,7 @@ type Table struct {
 type GlobalSecondaryIndex struct {
 	Name             string
 	PartitionKeyName string
-	PartitionKeyType string
+	PartitionKeyType AttributeType
 	SortKeyName      string
-	SortKeyType      string
+	SortKeyType      AttributeType
 }
