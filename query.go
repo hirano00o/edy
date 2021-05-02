@@ -55,7 +55,7 @@ func analyseSortCondition(
 		c = expression.KeyGreaterThanEqual(expression.Key(sortKey), expression.Value(v1))
 	case model.GT:
 		c = expression.KeyGreaterThan(expression.Key(sortKey), expression.Value(v1))
-	case model.BEGINS_WITH:
+	case model.BeginsWith:
 		c = expression.KeyBeginsWith(expression.Key(sortKey), v1.(string))
 	case model.BETWEEN:
 		v2, err := sortKeyType.Value(s[2])

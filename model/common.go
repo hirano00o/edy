@@ -73,11 +73,11 @@ const (
 	LT
 	GE
 	GT
-	NOT_NULL
+	NotNull
 	NULL
 	CONTAINS
-	NOT_CONTAINS
-	BEGINS_WITH
+	NotContains
+	BeginsWith
 	IN
 	BETWEEN
 )
@@ -89,11 +89,11 @@ var mapOptionComparisonOperator map[string]ComparisonOperator = map[string]Compa
 	"<":            LT,
 	">=":           GE,
 	">":            GT,
-	"not_null":     NOT_NULL,
+	"not_null":     NotNull,
 	"null":         NULL,
 	"contains":     CONTAINS,
-	"not_contains": NOT_CONTAINS,
-	"begins_with":  BEGINS_WITH,
+	"not_contains": NotContains,
+	"begins_with":  BeginsWith,
 	"in":           IN,
 	"between":      BETWEEN,
 }
