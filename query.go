@@ -70,7 +70,13 @@ func analyseSortCondition(
 	return &c, nil
 }
 
-func query(ctx context.Context, tableName, partitionValue, sortCondition, filterCondition string) ([]map[string]interface{}, error) {
+func query(
+	ctx context.Context,
+	tableName,
+	partitionValue,
+	sortCondition,
+	filterCondition string,
+) ([]map[string]interface{}, error) {
 	table, err := describeTable(ctx, tableName)
 	if err != nil {
 		return nil, err

@@ -78,7 +78,16 @@ func Test_analyseFilterCondition(t *testing.T) {
 			args: args{
 				condition: "ID,S in 1 2 3 4",
 			},
-			want: expression.In(expression.Name("ID"), expression.Value("1"), []expression.OperandBuilder{expression.Value("1"), expression.Value("2"), expression.Value("3"), expression.Value("4")}...),
+			want: expression.In(
+				expression.Name("ID"),
+				expression.Value("1"),
+				[]expression.OperandBuilder{
+					expression.Value("1"),
+					expression.Value("2"),
+					expression.Value("3"),
+					expression.Value("4"),
+				}...,
+			),
 		},
 		{
 			name: "Exists case",
@@ -106,7 +115,16 @@ func Test_analyseFilterCondition(t *testing.T) {
 			args: args{
 				condition: "not ID,S in 1 2 3 4",
 			},
-			want: expression.In(expression.Name("ID"), expression.Value("1"), []expression.OperandBuilder{expression.Value("1"), expression.Value("2"), expression.Value("3"), expression.Value("4")}...).Not(),
+			want: expression.In(
+				expression.Name("ID"),
+				expression.Value("1"),
+				[]expression.OperandBuilder{
+					expression.Value("1"),
+					expression.Value("2"),
+					expression.Value("3"),
+					expression.Value("4"),
+				}...,
+			).Not(),
 		},
 		{
 			name: "not Exists case",
@@ -129,7 +147,17 @@ func Test_analyseFilterCondition(t *testing.T) {
 				condition: "not ID,S = 1234 and not Name,S in user1 user2 user3 user4",
 			},
 			want: expression.Equal(expression.Name("ID"), expression.Value("1234")).Not().And(
-				expression.In(expression.Name("Name"), expression.Value("user1"), []expression.OperandBuilder{expression.Value("user1"), expression.Value("user2"), expression.Value("user3"), expression.Value("user4")}...).Not()),
+				expression.In(
+					expression.Name("Name"),
+					expression.Value("user1"),
+					[]expression.OperandBuilder{
+						expression.Value("user1"),
+						expression.Value("user2"),
+						expression.Value("user3"),
+						expression.Value("user4"),
+					}...,
+				).Not(),
+			),
 		},
 		{
 			name: "not EQ and Exists case",
@@ -144,7 +172,16 @@ func Test_analyseFilterCondition(t *testing.T) {
 			args: args{
 				condition: "not Name,S in user1 user2 user3 user4 or not ID,S = 1234",
 			},
-			want: expression.In(expression.Name("Name"), expression.Value("user1"), []expression.OperandBuilder{expression.Value("user1"), expression.Value("user2"), expression.Value("user3"), expression.Value("user4")}...).Not().Or(
+			want: expression.In(
+				expression.Name("Name"),
+				expression.Value("user1"),
+				[]expression.OperandBuilder{
+					expression.Value("user1"),
+					expression.Value("user2"),
+					expression.Value("user3"),
+					expression.Value("user4"),
+				}...,
+			).Not().Or(
 				expression.Equal(expression.Name("ID"), expression.Value("1234")).Not()),
 		},
 		{
@@ -162,7 +199,17 @@ func Test_analyseFilterCondition(t *testing.T) {
 			},
 			want: expression.AttributeExists(expression.Name("Age")).Or(
 				expression.Equal(expression.Name("ID"), expression.Value("1234")).Not()).And(
-				expression.In(expression.Name("Name"), expression.Value("user1"), []expression.OperandBuilder{expression.Value("user1"), expression.Value("user2"), expression.Value("user3"), expression.Value("user4")}...).Not()),
+				expression.In(
+					expression.Name("Name"),
+					expression.Value("user1"),
+					[]expression.OperandBuilder{
+						expression.Value("user1"),
+						expression.Value("user2"),
+						expression.Value("user3"),
+						expression.Value("user4"),
+					}...,
+				).Not(),
+			),
 		},
 		{
 			name: "Missing key type",

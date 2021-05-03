@@ -165,7 +165,13 @@ func analyseFilterCondition(
 	return &c, nil
 }
 
-func makeExpression(op model.ComparisonOperator, conditionKeyType model.AttributeType, conditionValue []string, conditionKey string, notCondition bool) (*expression.ConditionBuilder, error) {
+func makeExpression(
+	op model.ComparisonOperator,
+	conditionKeyType model.AttributeType,
+	conditionValue []string,
+	conditionKey string,
+	notCondition bool,
+) (*expression.ConditionBuilder, error) {
 	var c expression.ConditionBuilder
 	switch op {
 	case model.EQ:
