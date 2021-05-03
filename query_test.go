@@ -1,11 +1,20 @@
 package edy
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
+	"github.com/hirano00o/edy/mocks"
 	"github.com/hirano00o/edy/model"
 )
 
@@ -154,4 +163,245 @@ func Test_analyseSortCondition(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInstance_Query(t *testing.T) {
+	type args struct {
+		ctx             context.Context
+		tableName       string
+		partitionValue  string
+		sortCondition   string
+		filterCondition string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		mocking func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI
+		wantW   string
+		wantErr bool
+	}{
+		{
+			name: "Query with partition key",
+			args: args{
+				ctx:            context.Background(),
+				tableName:      "TEST",
+				partitionValue: "TEST_PARTITION_VALUE_1",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				table := describeTableOutputFixture(t, false)
+				m.DescribeTableAPIClient.On("DescribeTable", ctx, &dynamodb.DescribeTableInput{
+					TableName: aws.String("TEST"),
+				}).Return(table, nil)
+				condition := expression.KeyEqual(
+					expression.Key("TEST_PARTITION_ATTRIBUTE"),
+					expression.Value("TEST_PARTITION_VALUE_1"),
+				)
+				builder := expression.NewBuilder().WithKeyCondition(condition)
+				expr, err := builder.Build()
+				if err != nil {
+					t.Fatalf("expression build error: %v", err)
+				}
+				input := &dynamodb.QueryInput{
+					TableName:                 aws.String("TEST"),
+					ExpressionAttributeNames:  expr.Names(),
+					ExpressionAttributeValues: expr.Values(),
+					KeyConditionExpression:    expr.KeyCondition(),
+				}
+				m.QueryAPIClient.On("Query", ctx, input).Return(queryOutputFixture(t), nil)
+				return m
+			},
+			wantW: jsonFixture(t, []map[string]interface{}{
+				{
+					"TEST_PARTITION_ATTRIBUTE": "TEST_PARTITION_VALUE_1",
+					"TEST_SORT_ATTRIBUTE":      "TEST_SORT_VALUE_1",
+					"TEST_ATTRIBUTE_1":         "TEST_ATTRIBUTE_1_VALUE_1",
+					"TEST_ATTRIBUTE_2":         1,
+				},
+			}),
+		},
+		{
+			name: "Query with partition and sort key",
+			args: args{
+				ctx:            context.Background(),
+				tableName:      "TEST",
+				partitionValue: "TEST_PARTITION_VALUE_1",
+				sortCondition:  "= TEST_SORT_VALUE_1",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				table := describeTableOutputFixture(t, false)
+				m.DescribeTableAPIClient.On("DescribeTable", ctx, &dynamodb.DescribeTableInput{
+					TableName: aws.String("TEST"),
+				}).Return(table, nil)
+				condition := expression.KeyEqual(
+					expression.Key("TEST_PARTITION_ATTRIBUTE"),
+					expression.Value("TEST_PARTITION_VALUE_1"),
+				).And(expression.KeyEqual(
+					expression.Key("TEST_SORT_ATTRIBUTE"),
+					expression.Value("TEST_SORT_VALUE_1"),
+				))
+				builder := expression.NewBuilder().WithKeyCondition(condition)
+				expr, err := builder.Build()
+				if err != nil {
+					t.Fatalf("expression build error: %v", err)
+				}
+				input := &dynamodb.QueryInput{
+					TableName:                 aws.String("TEST"),
+					ExpressionAttributeNames:  expr.Names(),
+					ExpressionAttributeValues: expr.Values(),
+					KeyConditionExpression:    expr.KeyCondition(),
+				}
+				m.QueryAPIClient.On("Query", ctx, input).Return(queryOutputFixture(t), nil)
+				return m
+			},
+			wantW: jsonFixture(t, []map[string]interface{}{
+				{
+					"TEST_PARTITION_ATTRIBUTE": "TEST_PARTITION_VALUE_1",
+					"TEST_SORT_ATTRIBUTE":      "TEST_SORT_VALUE_1",
+					"TEST_ATTRIBUTE_1":         "TEST_ATTRIBUTE_1_VALUE_1",
+					"TEST_ATTRIBUTE_2":         1,
+				},
+			}),
+		},
+		{
+			name: "Query with partition key and filter",
+			args: args{
+				ctx:             context.Background(),
+				tableName:       "TEST",
+				partitionValue:  "TEST_PARTITION_VALUE_1",
+				filterCondition: "TEST_ATTRIBUTE_2,N = 1",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				table := describeTableOutputFixture(t, false)
+				m.DescribeTableAPIClient.On("DescribeTable", ctx, &dynamodb.DescribeTableInput{
+					TableName: aws.String("TEST"),
+				}).Return(table, nil)
+				keyCondition := expression.KeyEqual(
+					expression.Key("TEST_PARTITION_ATTRIBUTE"),
+					expression.Value("TEST_PARTITION_VALUE_1"),
+				)
+				filterCondition := expression.Equal(
+					expression.Name("TEST_ATTRIBUTE_2"),
+					expression.Value(1),
+				)
+				builder := expression.NewBuilder().WithKeyCondition(keyCondition).WithCondition(filterCondition)
+				expr, err := builder.Build()
+				if err != nil {
+					t.Fatalf("expression build error: %v", err)
+				}
+				input := &dynamodb.QueryInput{
+					TableName:                 aws.String("TEST"),
+					ExpressionAttributeNames:  expr.Names(),
+					ExpressionAttributeValues: expr.Values(),
+					KeyConditionExpression:    expr.KeyCondition(),
+					FilterExpression:          expr.Condition(),
+				}
+				m.QueryAPIClient.On("Query", ctx, input).Return(queryOutputFixture(t), nil)
+				return m
+			},
+			wantW: jsonFixture(t, []map[string]interface{}{
+				{
+					"TEST_PARTITION_ATTRIBUTE": "TEST_PARTITION_VALUE_1",
+					"TEST_SORT_ATTRIBUTE":      "TEST_SORT_VALUE_1",
+					"TEST_ATTRIBUTE_1":         "TEST_ATTRIBUTE_1_VALUE_1",
+					"TEST_ATTRIBUTE_2":         1,
+				},
+			}),
+		},
+		{
+			name: "Query error",
+			args: args{
+				ctx:            context.Background(),
+				tableName:      "TEST",
+				partitionValue: "TEST_PARTITION_VALUE_1",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				table := describeTableOutputFixture(t, false)
+				m.DescribeTableAPIClient.On("DescribeTable", ctx, &dynamodb.DescribeTableInput{
+					TableName: aws.String("TEST"),
+				}).Return(table, nil)
+				condition := expression.KeyEqual(
+					expression.Key("TEST_PARTITION_ATTRIBUTE"),
+					expression.Value("TEST_PARTITION_VALUE_1"),
+				)
+				builder := expression.NewBuilder().WithKeyCondition(condition)
+				expr, err := builder.Build()
+				if err != nil {
+					t.Fatalf("expression build error: %v", err)
+				}
+				input := &dynamodb.QueryInput{
+					TableName:                 aws.String("TEST"),
+					ExpressionAttributeNames:  expr.Names(),
+					ExpressionAttributeValues: expr.Values(),
+					KeyConditionExpression:    expr.KeyCondition(),
+				}
+				m.QueryAPIClient.On("Query", ctx, input).Return(nil, fmt.Errorf("query error"))
+				return m
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := tt.mocking(t, tt.args.ctx)
+			i := &Instance{
+				NewClient: mock,
+			}
+			w := &bytes.Buffer{}
+			err := i.Query(
+				tt.args.ctx,
+				w,
+				tt.args.tableName,
+				tt.args.partitionValue,
+				tt.args.sortCondition,
+				tt.args.filterCondition,
+			)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Query() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotW := w.String(); gotW != tt.wantW {
+				t.Errorf("Query() gotW = %v, want %v", gotW, tt.wantW)
+			}
+		})
+	}
+}
+
+func queryOutputFixture(t *testing.T) *dynamodb.QueryOutput {
+	t.Helper()
+	return &dynamodb.QueryOutput{
+		Items: []map[string]types.AttributeValue{
+			{
+				"TEST_PARTITION_ATTRIBUTE": &types.AttributeValueMemberS{Value: "TEST_PARTITION_VALUE_1"},
+				"TEST_SORT_ATTRIBUTE":      &types.AttributeValueMemberS{Value: "TEST_SORT_VALUE_1"},
+				"TEST_ATTRIBUTE_1":         &types.AttributeValueMemberS{Value: "TEST_ATTRIBUTE_1_VALUE_1"},
+				"TEST_ATTRIBUTE_2":         &types.AttributeValueMemberN{Value: "1"},
+			},
+		},
+		Count: 1,
+	}
+}
+
+func jsonFixture(t *testing.T, m []map[string]interface{}) string {
+	t.Helper()
+	b, err := json.MarshalIndent(m, "", strings.Repeat(" ", 2))
+	if err != nil {
+		t.Fatalf("json marshal error: %v", err)
+	}
+	return string(b) + "\n"
 }

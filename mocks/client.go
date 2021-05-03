@@ -17,18 +17,3 @@ func (_m *MockDynamoDBAPI) CreateInstance() client.DynamoDB {
 	ret := _m.Called()
 	return ret.Get(0).(client.DynamoDB)
 }
-
-func (_m *DescribeTableAPIClient) CreateInstance() client.DynamoDB {
-	ret := _m.Called()
-	return ret.Get(0).(client.DynamoDB)
-}
-
-func (_m *QueryAPIClient) CreateInstance() client.DynamoDB {
-	ret := _m.Called()
-	return ret.Get(0).(client.DynamoDB)
-}
-
-func (_m *ScanAPIClient) CreateInstance() client.DynamoDB {
-	ret := _m.Called()
-	return ret.Get(0).(client.DynamoDB)
-}

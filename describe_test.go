@@ -19,11 +19,11 @@ func TestInstance_DescribeTable(t *testing.T) {
 		tableName string
 	}
 	tests := []struct {
-		name     string
-		args     args
-		makeMock func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI
-		wantW    string
-		wantErr  bool
+		name    string
+		args    args
+		mocking func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI
+		wantW   string
+		wantErr bool
 	}{
 		{
 			name: "Describe TEST table",
@@ -31,7 +31,7 @@ func TestInstance_DescribeTable(t *testing.T) {
 				ctx:       context.Background(),
 				tableName: "TEST",
 			},
-			makeMock: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
 				t.Helper()
 				m := new(mocks.MockDynamoDBAPI)
 				ctx = context.WithValue(ctx, newClientKey, m)
@@ -50,7 +50,7 @@ func TestInstance_DescribeTable(t *testing.T) {
 				ctx:       context.Background(),
 				tableName: "TEST",
 			},
-			makeMock: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
 				t.Helper()
 				m := new(mocks.MockDynamoDBAPI)
 				ctx = context.WithValue(ctx, newClientKey, m)
@@ -72,7 +72,7 @@ func TestInstance_DescribeTable(t *testing.T) {
 				ctx:       context.Background(),
 				tableName: "TEST",
 			},
-			makeMock: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
 				t.Helper()
 				m := new(mocks.MockDynamoDBAPI)
 				ctx = context.WithValue(ctx, newClientKey, m)
@@ -87,7 +87,7 @@ func TestInstance_DescribeTable(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mock := tt.makeMock(t, tt.args.ctx)
+			mock := tt.mocking(t, tt.args.ctx)
 			i := &Instance{
 				NewClient: mock,
 			}
@@ -145,21 +145,24 @@ func describeTableOutputFixture(t *testing.T, gsi bool) *dynamodb.DescribeTableO
 	}
 
 	if gsi {
-		output.Table.GlobalSecondaryIndexes = append(output.Table.GlobalSecondaryIndexes, []types.GlobalSecondaryIndexDescription{
-			{
-				IndexName: aws.String("TEST_GSI"),
-				KeySchema: []types.KeySchemaElement{
-					{
-						AttributeName: aws.String("TEST_ATTRIBUTE_1"),
-						KeyType:       types.KeyTypeHash,
-					},
-					{
-						AttributeName: aws.String("TEST_ATTRIBUTE_2"),
-						KeyType:       types.KeyTypeRange,
+		output.Table.GlobalSecondaryIndexes = append(
+			output.Table.GlobalSecondaryIndexes,
+			[]types.GlobalSecondaryIndexDescription{
+				{
+					IndexName: aws.String("TEST_GSI"),
+					KeySchema: []types.KeySchemaElement{
+						{
+							AttributeName: aws.String("TEST_ATTRIBUTE_1"),
+							KeyType:       types.KeyTypeHash,
+						},
+						{
+							AttributeName: aws.String("TEST_ATTRIBUTE_2"),
+							KeyType:       types.KeyTypeRange,
+						},
 					},
 				},
-			},
-		}...)
+			}...,
+		)
 	}
 
 	return output
