@@ -3,9 +3,10 @@ package edy
 import (
 	"context"
 	"fmt"
+	"io"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"io"
 
 	"github.com/hirano00o/edy/client"
 	"github.com/hirano00o/edy/model"
@@ -41,6 +42,7 @@ func describeTable(ctx context.Context, tableName string) (*model.Table, error) 
 	}
 	t.GSI = make([]*model.GlobalSecondaryIndex, len(res.Table.GlobalSecondaryIndexes))
 	for i, g := range res.Table.GlobalSecondaryIndexes {
+		t.GSI[i] = new(model.GlobalSecondaryIndex)
 		t.GSI[i].Name = aws.ToString(g.IndexName)
 		for j := range g.KeySchema {
 			name := aws.ToString(g.KeySchema[j].AttributeName)
