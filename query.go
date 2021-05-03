@@ -46,7 +46,7 @@ func analyseSortCondition(
 
 	switch op {
 	case model.EQ:
-		c = expression.KeyEqual(expression.Key(sortKey), expression.Value(v1.(string)))
+		c = expression.KeyEqual(expression.Key(sortKey), expression.Value(v1))
 	case model.LE:
 		c = expression.KeyLessThanEqual(expression.Key(sortKey), expression.Value(v1))
 	case model.LT:
@@ -70,12 +70,7 @@ func analyseSortCondition(
 	return &c, nil
 }
 
-func query(
-	ctx context.Context,
-	tableName string,
-	partitionValue,
-	sortCondition string,
-) ([]map[string]interface{}, error) {
+func query(ctx context.Context, tableName, partitionValue, sortCondition, filterCondition string) ([]map[string]interface{}, error) {
 	table, err := describeTable(ctx, tableName)
 	if err != nil {
 		return nil, err
@@ -97,8 +92,16 @@ func query(
 		}
 		condition = condition.And(*c)
 	}
-
 	builder := expression.NewBuilder().WithKeyCondition(condition)
+	// Filter condition
+	if len(filterCondition) != 0 {
+		c, err := analyseFilterCondition(filterCondition)
+		if err != nil {
+			return nil, err
+		}
+		builder = builder.WithCondition(*c)
+	}
+
 	expr, err := builder.Build()
 	if err != nil {
 		return nil, err
@@ -108,6 +111,7 @@ func query(
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.KeyCondition(),
+		FilterExpression:          expr.Condition(),
 	}
 
 	resMap := make([]map[string]interface{}, 0, table.ItemCount)
@@ -139,7 +143,7 @@ func (i *Instance) Query(
 	cli := i.NewClient.CreateInstance()
 	ctx = context.WithValue(ctx, newClientKey, cli)
 
-	res, err := query(ctx, tableName, partitionValue, sortCondition)
+	res, err := query(ctx, tableName, partitionValue, sortCondition, filterCondition)
 	if err != nil {
 		return err
 	}

@@ -58,7 +58,7 @@ func run(w io.Writer, args []string) error {
 	scanQueryOptions := []cli.Flag{
 		&cli.StringFlag{
 			Name:    "filter",
-			Usage:   "Filter by specified condition",
+			Usage:   "Filter by specified condition. --filter \"Age,N = 10 and Name,S = alice\"",
 			Aliases: []string{"f"},
 		},
 	}

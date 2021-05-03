@@ -65,6 +65,7 @@ func (a AttributeTypeStr) Name() AttributeType {
 }
 
 type ComparisonOperator int
+type LogicalOperator int
 
 const (
 	EQ ComparisonOperator = iota + 1
@@ -73,34 +74,47 @@ const (
 	LT
 	GE
 	GT
-	NotNull
-	NULL
+	EXISTS
 	CONTAINS
-	NotContains
 	BeginsWith
 	IN
 	BETWEEN
 )
 
-var mapOptionComparisonOperator map[string]ComparisonOperator = map[string]ComparisonOperator{
-	"=":            EQ,
-	"!=":           NE,
-	"<=":           LE,
-	"<":            LT,
-	">=":           GE,
-	">":            GT,
-	"not_null":     NotNull,
-	"null":         NULL,
-	"contains":     CONTAINS,
-	"not_contains": NotContains,
-	"begins_with":  BeginsWith,
-	"in":           IN,
-	"between":      BETWEEN,
+const (
+	AND LogicalOperator = iota + 1
+	OR
+)
+
+var mapComparisonOperator = map[string]ComparisonOperator{
+	"=":           EQ,
+	"!=":          NE,
+	"<=":          LE,
+	"<":           LT,
+	">=":          GE,
+	">":           GT,
+	"exists":      EXISTS,
+	"contains":    CONTAINS,
+	"begins_with": BeginsWith,
+	"in":          IN,
+	"between":     BETWEEN,
+}
+
+var mapLogicalOperator = map[string]LogicalOperator{
+	"and": AND,
+	"or":  OR,
 }
 
 func ConvertToComparisonOperator(op string) (ComparisonOperator, error) {
-	if v, ok := mapOptionComparisonOperator[op]; ok {
+	if v, ok := mapComparisonOperator[op]; ok {
 		return v, nil
 	}
 	return 0, fmt.Errorf("invalid comparison operator: %s", op)
+}
+
+func ConvertToLogicalOperator(op string) (LogicalOperator, error) {
+	if v, ok := mapLogicalOperator[op]; ok {
+		return v, nil
+	}
+	return 0, fmt.Errorf("invalid logical operator: %s", op)
 }
