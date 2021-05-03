@@ -112,7 +112,16 @@ func queryCmd(w io.Writer) cli.ActionFunc {
 
 func scanCmd(w io.Writer) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
-		return nil
+		c, err := client.New(ctx.Context, getOptions(ctx))
+		if err != nil {
+			return err
+		}
+		return edy.NewEdyClient(c).Scan(
+			ctx.Context,
+			w,
+			ctx.String("table-name"),
+			ctx.String("filter"),
+		)
 	}
 }
 

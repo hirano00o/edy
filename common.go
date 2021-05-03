@@ -17,6 +17,12 @@ type clientKey string
 const newClientKey clientKey = "client"
 
 type Edy interface {
+	Scan(
+		ctx context.Context,
+		w io.Writer,
+		tableName string,
+		filterCondition string,
+	) error
 	Query(
 		ctx context.Context,
 		w io.Writer,
