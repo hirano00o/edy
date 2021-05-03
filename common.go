@@ -20,16 +20,17 @@ type Edy interface {
 	Scan(
 		ctx context.Context,
 		w io.Writer,
-		tableName string,
+		tableName,
 		filterCondition string,
 	) error
 	Query(
 		ctx context.Context,
 		w io.Writer,
-		tableName string,
+		tableName,
 		partitionValue,
-		sortCondition string,
-		filterCondition string,
+		sortCondition,
+		filterCondition,
+		index string,
 	) error
 	DescribeTable(ctx context.Context, w io.Writer, tableName string) error
 }

@@ -75,7 +75,8 @@ func query(
 	tableName,
 	partitionValue,
 	sortCondition,
-	filterCondition string,
+	filterCondition,
+	index string,
 ) ([]map[string]interface{}, error) {
 	table, err := describeTable(ctx, tableName)
 	if err != nil {
@@ -83,16 +84,34 @@ func query(
 	}
 	cli := ctx.Value(newClientKey).(client.DynamoDB)
 
-	v, err := table.PartitionKeyType.Value(partitionValue)
+	partitionKeyName, partitionKeyType := table.PartitionKeyName, table.PartitionKeyType
+	sortKeyName, sortKeyType := table.SortKeyName, table.SortKeyType
+
+	// Index
+	if len(index) != 0 {
+		indexIsGSI := false
+		for i := range table.GSI {
+			if table.GSI[i].Name == index {
+				partitionKeyName, partitionKeyType = table.GSI[i].PartitionKeyName, table.GSI[i].PartitionKeyType
+				sortKeyName, sortKeyType = table.GSI[i].SortKeyName, table.GSI[i].SortKeyType
+				indexIsGSI = true
+				break
+			}
+		}
+		if !indexIsGSI {
+			return nil, fmt.Errorf("there is no index: %s", index)
+		}
+	}
+	v, err := partitionKeyType.Value(partitionValue)
 	if err != nil {
 		return nil, err
 	}
 
 	// PartitionKey condition
-	condition := expression.KeyEqual(expression.Key(table.PartitionKeyName), expression.Value(v))
+	condition := expression.KeyEqual(expression.Key(partitionKeyName), expression.Value(v))
 	// SortKey condition
 	if len(sortCondition) != 0 {
-		c, err := analyseSortCondition(sortCondition, table.SortKeyName, table.SortKeyType)
+		c, err := analyseSortCondition(sortCondition, sortKeyName, sortKeyType)
 		if err != nil {
 			return nil, err
 		}
@@ -119,6 +138,9 @@ func query(
 		KeyConditionExpression:    expr.KeyCondition(),
 		FilterExpression:          expr.Condition(),
 	}
+	if len(index) != 0 {
+		input.IndexName = aws.String(index)
+	}
 
 	resMap := make([]map[string]interface{}, 0, table.ItemCount)
 	paginator := dynamodb.NewQueryPaginator(cli, input)
@@ -141,15 +163,16 @@ func query(
 func (i *Instance) Query(
 	ctx context.Context,
 	w io.Writer,
-	tableName string,
+	tableName,
 	partitionValue,
-	sortCondition string,
-	filterCondition string,
+	sortCondition,
+	filterCondition,
+	index string,
 ) error {
 	cli := i.NewClient.CreateInstance()
 	ctx = context.WithValue(ctx, newClientKey, cli)
 
-	res, err := query(ctx, tableName, partitionValue, sortCondition, filterCondition)
+	res, err := query(ctx, tableName, partitionValue, sortCondition, filterCondition, index)
 	if err != nil {
 		return err
 	}

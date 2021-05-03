@@ -172,6 +172,7 @@ func TestInstance_Query(t *testing.T) {
 		partitionValue  string
 		sortCondition   string
 		filterCondition string
+		index           string
 	}
 	tests := []struct {
 		name    string
@@ -320,6 +321,51 @@ func TestInstance_Query(t *testing.T) {
 			}),
 		},
 		{
+			name: "Query with global secondary index",
+			args: args{
+				ctx:            context.Background(),
+				tableName:      "TEST",
+				partitionValue: "TEST_ATTRIBUTE_1_VALUE_1",
+				index:          "TEST_GSI",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				table := describeTableOutputFixture(t, true)
+				m.DescribeTableAPIClient.On("DescribeTable", ctx, &dynamodb.DescribeTableInput{
+					TableName: aws.String("TEST"),
+				}).Return(table, nil)
+				condition := expression.KeyEqual(
+					expression.Key("TEST_ATTRIBUTE_1"),
+					expression.Value("TEST_ATTRIBUTE_1_VALUE_1"),
+				)
+				builder := expression.NewBuilder().WithKeyCondition(condition)
+				expr, err := builder.Build()
+				if err != nil {
+					t.Fatalf("expression build error: %v", err)
+				}
+				input := &dynamodb.QueryInput{
+					TableName:                 aws.String("TEST"),
+					ExpressionAttributeNames:  expr.Names(),
+					ExpressionAttributeValues: expr.Values(),
+					KeyConditionExpression:    expr.KeyCondition(),
+					IndexName:                 aws.String("TEST_GSI"),
+				}
+				m.QueryAPIClient.On("Query", ctx, input).Return(queryOutputFixture(t), nil)
+				return m
+			},
+			wantW: jsonFixture(t, []map[string]interface{}{
+				{
+					"TEST_PARTITION_ATTRIBUTE": "TEST_PARTITION_VALUE_1",
+					"TEST_SORT_ATTRIBUTE":      "TEST_SORT_VALUE_1",
+					"TEST_ATTRIBUTE_1":         "TEST_ATTRIBUTE_1_VALUE_1",
+					"TEST_ATTRIBUTE_2":         1,
+				},
+			}),
+		},
+		{
 			name: "Query error",
 			args: args{
 				ctx:            context.Background(),
@@ -355,6 +401,27 @@ func TestInstance_Query(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "Invalid index",
+			args: args{
+				ctx:            context.Background(),
+				tableName:      "TEST",
+				partitionValue: "TEST_PARTITION_VALUE_1",
+				index:          "INVALID",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				table := describeTableOutputFixture(t, false)
+				m.DescribeTableAPIClient.On("DescribeTable", ctx, &dynamodb.DescribeTableInput{
+					TableName: aws.String("TEST"),
+				}).Return(table, nil)
+				return m
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -370,6 +437,7 @@ func TestInstance_Query(t *testing.T) {
 				tt.args.partitionValue,
 				tt.args.sortCondition,
 				tt.args.filterCondition,
+				tt.args.index,
 			)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Query() error = %v, wantErr %v", err, tt.wantErr)

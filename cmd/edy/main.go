@@ -54,6 +54,11 @@ func run(w io.Writer, args []string) error {
 			Usage:   "Sort condition and value. --sort \"> 10\"",
 			Aliases: []string{"s"},
 		},
+		&cli.StringFlag{
+			Name:    "index",
+			Usage:   "Index name",
+			Aliases: []string{"idx"},
+		},
 	}
 	scanQueryOptions := []cli.Flag{
 		&cli.StringFlag{
@@ -106,6 +111,7 @@ func queryCmd(w io.Writer) cli.ActionFunc {
 			ctx.String("partition"),
 			ctx.String("sort"),
 			ctx.String("filter"),
+			ctx.String("index"),
 		)
 	}
 }
