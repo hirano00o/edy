@@ -2,8 +2,10 @@ package edy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -33,11 +35,15 @@ func describeTable(ctx context.Context, tableName string) (*model.Table, error) 
 		name := aws.ToString(k.AttributeName)
 		switch k.KeyType {
 		case "HASH":
-			t.PartitionKeyName = name
-			t.PartitionKeyType = attr[t.PartitionKeyName]
+			t.PartitionKey = new(model.Key)
+			t.PartitionKey.Name = name
+			t.PartitionKey.Type = attr[t.PartitionKey.Name]
+			t.PartitionKey.TypeStr = attr[t.PartitionKey.Name].String()
 		case "RANGE":
-			t.SortKeyName = name
-			t.SortKeyType = attr[t.SortKeyName]
+			t.SortKey = new(model.Key)
+			t.SortKey.Name = name
+			t.SortKey.Type = attr[t.SortKey.Name]
+			t.SortKey.TypeStr = attr[t.SortKey.Name].String()
 		}
 	}
 	t.GSI = make([]*model.GlobalSecondaryIndex, len(res.Table.GlobalSecondaryIndexes))
@@ -48,11 +54,15 @@ func describeTable(ctx context.Context, tableName string) (*model.Table, error) 
 			name := aws.ToString(g.KeySchema[j].AttributeName)
 			switch g.KeySchema[j].KeyType {
 			case "HASH":
-				t.GSI[i].PartitionKeyName = name
-				t.GSI[i].PartitionKeyType = attr[t.GSI[i].PartitionKeyName]
+				t.GSI[i].PartitionKey = new(model.Key)
+				t.GSI[i].PartitionKey.Name = name
+				t.GSI[i].PartitionKey.Type = attr[t.GSI[i].PartitionKey.Name]
+				t.GSI[i].PartitionKey.TypeStr = attr[t.GSI[i].PartitionKey.Name].String()
 			case "RANGE":
-				t.GSI[i].SortKeyName = name
-				t.GSI[i].SortKeyType = attr[t.GSI[i].SortKeyName]
+				t.GSI[i].SortKey = new(model.Key)
+				t.GSI[i].SortKey.Name = name
+				t.GSI[i].SortKey.Type = attr[t.GSI[i].SortKey.Name]
+				t.GSI[i].SortKey.TypeStr = attr[t.GSI[i].SortKey.Name].String()
 			}
 		}
 	}
@@ -69,23 +79,11 @@ func (i *Instance) DescribeTable(ctx context.Context, w io.Writer, tableName str
 		return err
 	}
 
-	fmt.Fprintf(w, "Table Arn:\t%s\n", t.Arn)
-	fmt.Fprintf(w, "Table Name:\t%s\n", t.Name)
-	fmt.Fprintf(w, "Partition Key:\t%s(%s)\n", t.PartitionKeyName, t.PartitionKeyType.String())
-	if len(t.SortKeyName) != 0 {
-		fmt.Fprintf(w, "Sort Key:\t%s(%s)\n", t.SortKeyName, t.SortKeyType.String())
+	b, err := json.MarshalIndent(t, "", strings.Repeat(" ", 2))
+	if err != nil {
+		return err
 	}
-	if len(t.GSI) != 0 {
-		fmt.Fprintf(w, "GSI:\n")
-	}
-	for i := range t.GSI {
-		fmt.Fprintf(w, "\tIndex:\t%s\n", t.GSI[i].Name)
-		fmt.Fprintf(w, "\tPartition Key:\t%s(%s)\n", t.GSI[i].PartitionKeyName, t.GSI[i].PartitionKeyType.String())
-		if len(t.SortKeyName) != 0 {
-			fmt.Fprintf(w, "\tSort Key:\t%s(%s)\n", t.GSI[i].SortKeyName, t.GSI[i].SortKeyType.String())
-		}
-	}
-	fmt.Fprintf(w, "ItemCount:\t%d", t.ItemCount)
+	fmt.Fprintf(w, "%s\n", string(b))
 
 	return nil
 }

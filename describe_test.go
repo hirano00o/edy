@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
 	"github.com/hirano00o/edy/mocks"
+	"github.com/hirano00o/edy/model"
 )
 
 func TestInstance_DescribeTable(t *testing.T) {
@@ -41,8 +42,19 @@ func TestInstance_DescribeTable(t *testing.T) {
 				}).Return(describeTableOutputFixture(t, false), nil)
 				return m
 			},
-			wantW: "Table Arn:\tTEST_ARN\nTable Name:\tTEST\nPartition Key:\tTEST_PARTITION_ATTRIBUTE(S)\n" +
-				"Sort Key:\tTEST_SORT_ATTRIBUTE(S)\nItemCount:\t1",
+			wantW: jsonFixture(t, model.Table{
+				Arn:  "TEST_ARN",
+				Name: "TEST",
+				PartitionKey: &model.Key{
+					Name:    "TEST_PARTITION_ATTRIBUTE",
+					TypeStr: "S",
+				},
+				SortKey: &model.Key{
+					Name:    "TEST_SORT_ATTRIBUTE",
+					TypeStr: "S",
+				},
+				ItemCount: 1,
+			}),
 		},
 		{
 			name: "Describe TEST table with GSI",
@@ -60,11 +72,32 @@ func TestInstance_DescribeTable(t *testing.T) {
 				}).Return(describeTableOutputFixture(t, true), nil)
 				return m
 			},
-			wantW: "Table Arn:\tTEST_ARN\nTable Name:\tTEST\n" +
-				"Partition Key:\tTEST_PARTITION_ATTRIBUTE(S)\nSort Key:\tTEST_SORT_ATTRIBUTE(S)\n" +
-				"GSI:\n\tIndex:\tTEST_GSI\n" +
-				"\tPartition Key:\tTEST_ATTRIBUTE_1(S)\n\tSort Key:\tTEST_ATTRIBUTE_2(N)\n" +
-				"ItemCount:\t1",
+			wantW: jsonFixture(t, model.Table{
+				Arn:  "TEST_ARN",
+				Name: "TEST",
+				PartitionKey: &model.Key{
+					Name:    "TEST_PARTITION_ATTRIBUTE",
+					TypeStr: "S",
+				},
+				SortKey: &model.Key{
+					Name:    "TEST_SORT_ATTRIBUTE",
+					TypeStr: "S",
+				},
+				GSI: []*model.GlobalSecondaryIndex{
+					{
+						Name: "TEST_GSI",
+						PartitionKey: &model.Key{
+							Name:    "TEST_ATTRIBUTE_1",
+							TypeStr: "S",
+						},
+						SortKey: &model.Key{
+							Name:    "TEST_ATTRIBUTE_2",
+							TypeStr: "N",
+						},
+					},
+				},
+				ItemCount: 1,
+			}),
 		},
 		{
 			name: "DescribeTable error",

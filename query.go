@@ -84,16 +84,22 @@ func query(
 	}
 	cli := ctx.Value(newClientKey).(client.DynamoDB)
 
-	partitionKeyName, partitionKeyType := table.PartitionKeyName, table.PartitionKeyType
-	sortKeyName, sortKeyType := table.SortKeyName, table.SortKeyType
+	partitionKeyName, partitionKeyType := table.PartitionKey.Name, table.PartitionKey.Type
+	var sortKeyName string
+	var sortKeyType model.AttributeType
+	if table.SortKey != nil {
+		sortKeyName, sortKeyType = table.SortKey.Name, table.SortKey.Type
+	}
 
 	// Index
 	if len(index) != 0 {
 		indexIsGSI := false
 		for i := range table.GSI {
 			if table.GSI[i].Name == index {
-				partitionKeyName, partitionKeyType = table.GSI[i].PartitionKeyName, table.GSI[i].PartitionKeyType
-				sortKeyName, sortKeyType = table.GSI[i].SortKeyName, table.GSI[i].SortKeyType
+				partitionKeyName, partitionKeyType = table.GSI[i].PartitionKey.Name, table.GSI[i].PartitionKey.Type
+				if table.GSI[i].SortKey != nil {
+					sortKeyName, sortKeyType = table.GSI[i].SortKey.Name, table.GSI[i].SortKey.Type
+				}
 				indexIsGSI = true
 				break
 			}

@@ -465,7 +465,7 @@ func queryOutputFixture(t *testing.T) *dynamodb.QueryOutput {
 	}
 }
 
-func jsonFixture(t *testing.T, m []map[string]interface{}) string {
+func jsonFixture(t *testing.T, m interface{}) string {
 	t.Helper()
 	b, err := json.MarshalIndent(m, "", strings.Repeat(" ", 2))
 	if err != nil {
