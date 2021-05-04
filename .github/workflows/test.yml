@@ -1,12 +1,12 @@
-name: go-test
+name: test
 
 on:
   pull_request:
     types: [opened, synchronize]
 
 jobs:
-  go-test:
-    name: go-test
+  test:
+    name: test
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
