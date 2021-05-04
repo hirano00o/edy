@@ -1,0 +1,7 @@
+linters:
+  enable:
+    - lll
+    - govet
+    - golint
+    - gosec
+    - gocritic
