@@ -31,7 +31,7 @@ $ edy --help
 ## go get
 
 ```shell
-$ go get github.com/hirano00o/edy/...
+$ go get github.com/hirano00o/edy/cmd/edy
 ```
 
 # Usage
