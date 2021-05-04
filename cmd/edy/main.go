@@ -38,32 +38,38 @@ func run(w io.Writer, args []string) error {
 			Usage: "AWS profile name",
 		},
 		&cli.StringFlag{
-			Name:  "local",
-			Usage: "Connect to localhost of specified port number. --local 8000",
+			Name: "local",
+			Usage: "Port number or full URL if you connect such as dynamodb-local and LocalStack.\n" +
+				"\tex. --local 8000",
 		},
 	}
 	queryOptions := []cli.Flag{
 		&cli.StringFlag{
 			Name:     "partition",
-			Usage:    "Partition value",
+			Usage:    "The value of partition key",
 			Aliases:  []string{"p"},
 			Required: true,
 		},
 		&cli.StringFlag{
-			Name:    "sort",
-			Usage:   "Sort condition and value. --sort \"> 10\"",
+			Name: "sort",
+			Usage: "The value and condition of sort key.\n" +
+				"\tex1. --sort \"> 20\"\n" +
+				"\tex2. --sort \"between 20 25\"\n" +
+				"\tAvailable operator is =,<=,<,>=,>,between,begins_with",
 			Aliases: []string{"s"},
 		},
 		&cli.StringFlag{
 			Name:    "index",
-			Usage:   "Index name",
+			Usage:   "Global secondary index name",
 			Aliases: []string{"idx"},
 		},
 	}
 	scanQueryOptions := []cli.Flag{
 		&cli.StringFlag{
-			Name:    "filter",
-			Usage:   "Filter by specified condition. --filter \"Age,N = 10 and Name,S = alice\"",
+			Name: "filter",
+			Usage: "The condition if you use filter.\n" +
+				"\tex. --filter \"Age,N >= 20 and Email,S in alice@example.com bob@example.com or not Birthplace,S exists\"\n" +
+				"\tAvailable operator is =,<=,<,>=,>,between,begins_with,exists,in,contains",
 			Aliases: []string{"f"},
 		},
 	}
@@ -74,21 +80,21 @@ func run(w io.Writer, args []string) error {
 		Commands: []*cli.Command{
 			{
 				Name:    "describe",
-				Usage:   "Describe specified table",
+				Usage:   "Describe table",
 				Aliases: []string{"d"},
 				Flags:   baseOptions,
 				Action:  describeCmd(w),
 			},
 			{
 				Name:    "scan",
-				Usage:   "Scan specified table",
+				Usage:   "Scan table",
 				Aliases: []string{"s"},
 				Flags:   append(baseOptions, scanQueryOptions...),
 				Action:  scanCmd(w),
 			},
 			{
 				Name:    "query",
-				Usage:   "Query specified table",
+				Usage:   "Query table",
 				Aliases: []string{"q"},
 				Flags:   append(append(baseOptions, queryOptions...), scanQueryOptions...),
 				Action:  queryCmd(w),

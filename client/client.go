@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -31,6 +32,9 @@ func New(context context.Context, options map[string]string) (*Client, error) {
 		switch k {
 		case "local":
 			url := fmt.Sprintf("http://localhost:%s", options[k])
+			if strings.HasPrefix(options[k], "http") {
+				url = options[k]
+			}
 			cli.endpoint = url
 			// Issue: It does not work endpoint setting.
 			optFns = append(optFns,
