@@ -3,6 +3,7 @@ edy is a command line interface designed to make DynamoDB easy to use.
 
 [![test](https://github.com/hirano00o/edy/actions/workflows/test.yml/badge.svg)](https://github.com/hirano00o/edy/actions/workflows/test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/hirano00o/edy/badge.svg?branch=master)](https://coveralls.io/github/hirano00o/edy?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hirano00o/edy)](https://goreportcard.com/report/github.com/hirano00o/edy)
 
 # Installation
 ## Download Binaries
