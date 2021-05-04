@@ -110,7 +110,7 @@ func queryCmd(w io.Writer) cli.ActionFunc {
 		if err != nil {
 			return err
 		}
-		return edy.NewEdyClient(c).Query(
+		return newEdyClient(c).Query(
 			ctx.Context,
 			w,
 			ctx.String("table-name"),
@@ -128,7 +128,7 @@ func scanCmd(w io.Writer) cli.ActionFunc {
 		if err != nil {
 			return err
 		}
-		return edy.NewEdyClient(c).Scan(
+		return newEdyClient(c).Scan(
 			ctx.Context,
 			w,
 			ctx.String("table-name"),
@@ -143,7 +143,7 @@ func describeCmd(w io.Writer) cli.ActionFunc {
 		if err != nil {
 			return err
 		}
-		return edy.NewEdyClient(c).DescribeTable(ctx.Context, w, ctx.String("table-name"))
+		return newEdyClient(c).DescribeTable(ctx.Context, w, ctx.String("table-name"))
 	}
 }
 
@@ -166,4 +166,10 @@ func getOptions(ctx *cli.Context) map[string]string {
 	}
 
 	return o
+}
+
+func newEdyClient(c client.NewClient) edy.Edy {
+	return &edy.Instance{
+		NewClient: c,
+	}
 }
