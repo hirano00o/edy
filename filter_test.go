@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 func Test_analyseFilterCondition(t *testing.T) {
@@ -23,6 +24,13 @@ func Test_analyseFilterCondition(t *testing.T) {
 				condition: "ID,S = 1234",
 			},
 			want: expression.Equal(expression.Name("ID"), expression.Value("1234")),
+		},
+		{
+			name: "NE case",
+			args: args{
+				condition: "ID,S != 1234",
+			},
+			want: expression.NotEqual(expression.Name("ID"), expression.Value("1234")),
 		},
 		{
 			name: "LE case",
@@ -212,6 +220,70 @@ func Test_analyseFilterCondition(t *testing.T) {
 			),
 		},
 		{
+			name: "SS type EQ case",
+			args: args{
+				condition: "Name,SS = user1 user2 user3",
+			},
+			want: expression.Equal(
+				expression.Name("Name"),
+				expression.Value(&types.AttributeValueMemberSS{Value: []string{"user1", "user2", "user3"}}),
+			),
+		},
+		{
+			name: "not NS type EQ case",
+			args: args{
+				condition: "not Age,NS = 1 2 3",
+			},
+			want: expression.Equal(
+				expression.Name("Age"),
+				expression.Value(&types.AttributeValueMemberNS{Value: []string{"1", "2", "3"}}),
+			).Not(),
+		},
+		{
+			name: "SS type IN case",
+			args: args{
+				condition: "Name,SS in user1 user2 user3",
+			},
+			want: expression.In(
+				expression.Name("Name"),
+				expression.Value(&types.AttributeValueMemberSS{Value: []string{"user1", "user2", "user3"}}),
+			),
+		},
+		{
+			name: "Map SS type IN case",
+			args: args{
+				condition: "Name.Family,SS in user1 user2 user3",
+			},
+			want: expression.In(
+				expression.Name("Name.Family"),
+				expression.Value(&types.AttributeValueMemberSS{Value: []string{"user1", "user2", "user3"}}),
+			),
+		},
+		{
+			name: "SS type Exists case",
+			args: args{
+				condition: "Name,SS exists",
+			},
+			want: expression.AttributeExists(expression.Name("Name")),
+		},
+		{
+			name: "NS type EQ and not Exists and SS type IN case",
+			args: args{
+				condition: "Age,NS = 1 2 3 and not Country,S exists and Name,SS in user1 user2 user3",
+			},
+			want: expression.Equal(
+				expression.Name("Age"),
+				expression.Value(&types.AttributeValueMemberNS{Value: []string{"1", "2", "3"}}),
+			).And(
+				expression.AttributeNotExists(expression.Name("Country")),
+			).And(
+				expression.In(
+					expression.Name("Name"),
+					expression.Value(&types.AttributeValueMemberSS{Value: []string{"user1", "user2", "user3"}}),
+				),
+			),
+		},
+		{
 			name: "Missing key type",
 			args: args{
 				condition: "ID = 1234",
@@ -236,6 +308,13 @@ func Test_analyseFilterCondition(t *testing.T) {
 			name: "Invalid number value",
 			args: args{
 				condition: "ID,N = a1234",
+			},
+			wantErr: true,
+		},
+		{
+			name: "SS type cannot use logical operator",
+			args: args{
+				condition: "Name,SS <= user1 user2 user3",
 			},
 			wantErr: true,
 		},
