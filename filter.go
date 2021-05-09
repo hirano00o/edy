@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
 	"github.com/hirano00o/edy/model"
 )
@@ -56,6 +57,11 @@ func analyseFilterCondition(
 			if err != nil {
 				return nil, err
 			}
+			if (conditionKeyType.String() == new(model.SS).String() ||
+				conditionKeyType.String() == new(model.NS).String()) &&
+				!(op == model.IN || op == model.EQ || op == model.EXISTS) {
+				return nil, fmt.Errorf("%s operand can not use type %s", op.String(), conditionKeyType.String())
+			}
 			if op == model.EXISTS {
 				nextState = join
 			} else {
@@ -75,7 +81,9 @@ func analyseFilterCondition(
 				if len(conditionValue) == 2 {
 					nextState = join
 				}
-			case op == model.IN:
+			case op == model.IN || (op == model.EQ &&
+				(conditionKeyType.String() == new(model.SS).String() ||
+					conditionKeyType.String() == new(model.NS).String())):
 				_, err = model.ConvertToLogicalOperator(s[i])
 				if err == nil {
 					i--
@@ -117,7 +125,10 @@ func analyseFilterCondition(
 			return nil, fmt.Errorf("unknown condition error: %s", condition)
 		}
 	}
-	if nextState != join && op != model.IN {
+	if nextState != join && op != model.IN &&
+		!(op == model.EQ &&
+			(conditionKeyType.String() == new(model.SS).String() ||
+				conditionKeyType.String() == new(model.NS).String())) {
 		return nil, fmt.Errorf("invalid condition: %s", condition)
 	}
 	_c, err := makeExpression(op, conditionKeyType, conditionValue, conditionKey, notCondition)
@@ -136,6 +147,38 @@ func analyseFilterCondition(
 	return &c, nil
 }
 
+func makeExpressionValue(
+	op model.ComparisonOperator,
+	conditionKeyType model.AttributeType,
+	conditionValue []string,
+) (interface{}, error) {
+	switch conditionKeyType.String() {
+	case new(model.SS).String():
+		return []expression.OperandBuilder{
+			expression.Value(
+				&types.AttributeValueMemberSS{Value: conditionValue},
+			)}, nil
+	case new(model.NS).String():
+		return []expression.OperandBuilder{
+			expression.Value(
+				&types.AttributeValueMemberNS{Value: conditionValue},
+			)}, nil
+	default:
+		v := make([]expression.OperandBuilder, len(conditionValue))
+		for i := range conditionValue {
+			cv, err := conditionKeyType.Value(conditionValue[i])
+			if err != nil {
+				return nil, fmt.Errorf("invalid condition, cannot convert key type: %v", err)
+			}
+			if op == model.CONTAINS || op == model.BeginsWith {
+				return cv, nil
+			}
+			v[i] = expression.Value(cv)
+		}
+		return v, nil
+	}
+}
+
 func makeExpression(
 	op model.ComparisonOperator,
 	conditionKeyType model.AttributeType,
@@ -144,69 +187,41 @@ func makeExpression(
 	notCondition bool,
 ) (*expression.ConditionBuilder, error) {
 	var c expression.ConditionBuilder
+	v, err := makeExpressionValue(op, conditionKeyType, conditionValue)
+	if err != nil {
+		return nil, err
+	}
+
 	switch op {
 	case model.EQ:
-		v, err := conditionKeyType.Value(conditionValue[0])
-		if err != nil {
-			return nil, fmt.Errorf("invalid condition, %v", err)
-		}
-		c = expression.Equal(expression.Name(conditionKey), expression.Value(v))
+		c = expression.Equal(expression.Name(conditionKey), v.([]expression.OperandBuilder)[0])
+	case model.NE:
+		c = expression.NotEqual(expression.Name(conditionKey), v.([]expression.OperandBuilder)[0])
 	case model.LE:
-		v, err := conditionKeyType.Value(conditionValue[0])
-		if err != nil {
-			return nil, fmt.Errorf("invalid condition, %v", err)
-		}
-		c = expression.LessThanEqual(expression.Name(conditionKey), expression.Value(v))
+		c = expression.LessThanEqual(expression.Name(conditionKey), v.([]expression.OperandBuilder)[0])
 	case model.LT:
-		v, err := conditionKeyType.Value(conditionValue[0])
-		if err != nil {
-			return nil, fmt.Errorf("invalid condition, %v", err)
-		}
-		c = expression.LessThan(expression.Name(conditionKey), expression.Value(v))
+		c = expression.LessThan(expression.Name(conditionKey), v.([]expression.OperandBuilder)[0])
 	case model.GE:
-		v, err := conditionKeyType.Value(conditionValue[0])
-		if err != nil {
-			return nil, fmt.Errorf("invalid condition, %v", err)
-		}
-		c = expression.GreaterThanEqual(expression.Name(conditionKey), expression.Value(v))
+		c = expression.GreaterThanEqual(expression.Name(conditionKey), v.([]expression.OperandBuilder)[0])
 	case model.GT:
-		v, err := conditionKeyType.Value(conditionValue[0])
-		if err != nil {
-			return nil, fmt.Errorf("invalid condition, %v", err)
-		}
-		c = expression.GreaterThan(expression.Name(conditionKey), expression.Value(v))
+		c = expression.GreaterThan(expression.Name(conditionKey), v.([]expression.OperandBuilder)[0])
 	case model.BeginsWith:
-		v, err := conditionKeyType.Value(conditionValue[0])
-		if err != nil {
-			return nil, fmt.Errorf("invalid condition, %v", err)
-		}
 		c = expression.BeginsWith(expression.Name(conditionKey), v.(string))
 	case model.BETWEEN:
-		v1, err := conditionKeyType.Value(conditionValue[0])
-		if err != nil {
-			return nil, fmt.Errorf("invalid condition, %v", err)
-		}
-		v2, err := conditionKeyType.Value(conditionValue[1])
-		if err != nil {
-			return nil, fmt.Errorf("invalid condition, %v", err)
-		}
-		c = expression.Between(expression.Name(conditionKey), expression.Value(v1), expression.Value(v2))
+		c = expression.Between(
+			expression.Name(conditionKey),
+			v.([]expression.OperandBuilder)[0],
+			v.([]expression.OperandBuilder)[1],
+		)
 	case model.CONTAINS:
-		v, err := conditionKeyType.Value(conditionValue[0])
-		if err != nil {
-			return nil, fmt.Errorf("invalid condition, %v", err)
-		}
 		c = expression.Contains(expression.Name(conditionKey), v.(string))
 	case model.IN:
-		v := make([]expression.OperandBuilder, len(conditionValue))
-		for i := range conditionValue {
-			_v, err := conditionKeyType.Value(conditionValue[i])
-			if err != nil {
-				return nil, fmt.Errorf("invalid condition, %v", err)
-			}
-			v[i] = expression.Value(_v)
+		vv := v.([]expression.OperandBuilder)
+		if len(vv) == 1 {
+			c = expression.In(expression.Name(conditionKey), vv[0])
+		} else {
+			c = expression.In(expression.Name(conditionKey), vv[0], vv...)
 		}
-		c = expression.In(expression.Name(conditionKey), v[0], v...)
 	case model.EXISTS:
 		if notCondition {
 			c = expression.AttributeNotExists(expression.Name(conditionKey))

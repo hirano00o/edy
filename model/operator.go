@@ -38,6 +38,20 @@ var mapComparisonOperator = map[string]ComparisonOperator{
 	"between":     BETWEEN,
 }
 
+var mapComparisonOperatorStr = map[ComparisonOperator]string{
+	EQ:         "=",
+	NE:         "!=",
+	LE:         "<=",
+	LT:         "<",
+	GE:         ">=",
+	GT:         ">",
+	EXISTS:     "exists",
+	CONTAINS:   "contains",
+	BeginsWith: "begins_with",
+	IN:         "in",
+	BETWEEN:    "between",
+}
+
 var mapLogicalOperator = map[string]LogicalOperator{
 	"and": AND,
 	"or":  OR,
@@ -55,4 +69,11 @@ func ConvertToLogicalOperator(op string) (LogicalOperator, error) {
 		return v, nil
 	}
 	return 0, fmt.Errorf("invalid logical operator: %s", op)
+}
+
+func (c ComparisonOperator) String() string {
+	if v, ok := mapComparisonOperatorStr[c]; ok {
+		return v
+	}
+	return ""
 }
