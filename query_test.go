@@ -173,6 +173,7 @@ func TestInstance_Query(t *testing.T) {
 		sortCondition   string
 		filterCondition string
 		index           string
+		projection      string
 	}
 	tests := []struct {
 		name    string
@@ -212,7 +213,7 @@ func TestInstance_Query(t *testing.T) {
 					ExpressionAttributeValues: expr.Values(),
 					KeyConditionExpression:    expr.KeyCondition(),
 				}
-				m.QueryAPIClient.On("Query", ctx, input).Return(queryOutputFixture(t), nil)
+				m.QueryAPIClient.On("Query", ctx, input).Return(queryOutputFixture(t, ""), nil)
 				return m
 			},
 			wantW: jsonFixture(t, []map[string]interface{}{
@@ -259,7 +260,7 @@ func TestInstance_Query(t *testing.T) {
 					ExpressionAttributeValues: expr.Values(),
 					KeyConditionExpression:    expr.KeyCondition(),
 				}
-				m.QueryAPIClient.On("Query", ctx, input).Return(queryOutputFixture(t), nil)
+				m.QueryAPIClient.On("Query", ctx, input).Return(queryOutputFixture(t, ""), nil)
 				return m
 			},
 			wantW: jsonFixture(t, []map[string]interface{}{
@@ -308,7 +309,7 @@ func TestInstance_Query(t *testing.T) {
 					KeyConditionExpression:    expr.KeyCondition(),
 					FilterExpression:          expr.Condition(),
 				}
-				m.QueryAPIClient.On("Query", ctx, input).Return(queryOutputFixture(t), nil)
+				m.QueryAPIClient.On("Query", ctx, input).Return(queryOutputFixture(t, ""), nil)
 				return m
 			},
 			wantW: jsonFixture(t, []map[string]interface{}{
@@ -353,7 +354,7 @@ func TestInstance_Query(t *testing.T) {
 					KeyConditionExpression:    expr.KeyCondition(),
 					IndexName:                 aws.String("TEST_GSI"),
 				}
-				m.QueryAPIClient.On("Query", ctx, input).Return(queryOutputFixture(t), nil)
+				m.QueryAPIClient.On("Query", ctx, input).Return(queryOutputFixture(t, ""), nil)
 				return m
 			},
 			wantW: jsonFixture(t, []map[string]interface{}{
@@ -362,6 +363,58 @@ func TestInstance_Query(t *testing.T) {
 					"TEST_SORT_ATTRIBUTE":      "TEST_SORT_VALUE_1",
 					"TEST_ATTRIBUTE_1":         "TEST_ATTRIBUTE_1_VALUE_1",
 					"TEST_ATTRIBUTE_2":         1,
+				},
+			}),
+		},
+		{
+			name: "Query with projection",
+			args: args{
+				ctx:            context.Background(),
+				tableName:      "TEST",
+				partitionValue: "TEST_PARTITION_VALUE_1",
+				sortCondition:  "= TEST_SORT_VALUE_1",
+				projection:     "TEST_ATTRIBUTE_1 TEST_ATTRIBUTE_2",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				table := describeTableOutputFixture(t, false)
+				m.DescribeTableAPIClient.On("DescribeTable", ctx, &dynamodb.DescribeTableInput{
+					TableName: aws.String("TEST"),
+				}).Return(table, nil)
+				condition := expression.KeyEqual(
+					expression.Key("TEST_PARTITION_ATTRIBUTE"),
+					expression.Value("TEST_PARTITION_VALUE_1"),
+				).And(expression.KeyEqual(
+					expression.Key("TEST_SORT_ATTRIBUTE"),
+					expression.Value("TEST_SORT_VALUE_1"),
+				))
+				pj := expression.NamesList(
+					expression.Name("TEST_ATTRIBUTE_1"),
+					expression.Name("TEST_ATTRIBUTE_2"),
+				)
+				builder := expression.NewBuilder().WithKeyCondition(condition).WithProjection(pj)
+				expr, err := builder.Build()
+				if err != nil {
+					t.Fatalf("expression build error: %v", err)
+				}
+				input := &dynamodb.QueryInput{
+					TableName:                 aws.String("TEST"),
+					ExpressionAttributeNames:  expr.Names(),
+					ExpressionAttributeValues: expr.Values(),
+					KeyConditionExpression:    expr.KeyCondition(),
+					ProjectionExpression:      expr.Projection(),
+				}
+				m.QueryAPIClient.On("Query", ctx, input).
+					Return(queryOutputFixture(t, "TEST_ATTRIBUTE_1 TEST_ATTRIBUTE_2"), nil)
+				return m
+			},
+			wantW: jsonFixture(t, []map[string]interface{}{
+				{
+					"TEST_ATTRIBUTE_1": "TEST_ATTRIBUTE_1_VALUE_1",
+					"TEST_ATTRIBUTE_2": 1,
 				},
 			}),
 		},
@@ -438,6 +491,7 @@ func TestInstance_Query(t *testing.T) {
 				tt.args.sortCondition,
 				tt.args.filterCondition,
 				tt.args.index,
+				tt.args.projection,
 			)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Query() error = %v, wantErr %v", err, tt.wantErr)
@@ -450,8 +504,26 @@ func TestInstance_Query(t *testing.T) {
 	}
 }
 
-func queryOutputFixture(t *testing.T) *dynamodb.QueryOutput {
+func queryOutputFixture(t *testing.T, pj string) *dynamodb.QueryOutput {
 	t.Helper()
+	if len(pj) != 0 {
+		m := map[string]types.AttributeValue{
+			"TEST_PARTITION_ATTRIBUTE": &types.AttributeValueMemberS{Value: "TEST_PARTITION_VALUE_1"},
+			"TEST_SORT_ATTRIBUTE":      &types.AttributeValueMemberS{Value: "TEST_SORT_VALUE_1"},
+			"TEST_ATTRIBUTE_1":         &types.AttributeValueMemberS{Value: "TEST_ATTRIBUTE_1_VALUE_1"},
+			"TEST_ATTRIBUTE_2":         &types.AttributeValueMemberN{Value: "1"},
+		}
+		var rMap = map[string]types.AttributeValue{}
+		for _, s := range strings.Split(pj, " ") {
+			rMap[s] = m[s]
+		}
+		return &dynamodb.QueryOutput{
+			Items: []map[string]types.AttributeValue{
+				rMap,
+			},
+			Count: 1,
+		}
+	}
 	return &dynamodb.QueryOutput{
 		Items: []map[string]types.AttributeValue{
 			{

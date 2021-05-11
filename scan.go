@@ -15,16 +15,11 @@ import (
 	"github.com/hirano00o/edy/client"
 )
 
-func (i *Instance) Scan(
-	ctx context.Context,
-	w io.Writer,
-	tableName string,
-	filterCondition string,
-) error {
+func (i *Instance) Scan(ctx context.Context, w io.Writer, tableName, filterCondition, projection string) error {
 	cli := i.NewClient.CreateInstance()
 	ctx = context.WithValue(ctx, newClientKey, cli)
 
-	res, err := scan(ctx, tableName, filterCondition)
+	res, err := scan(ctx, tableName, filterCondition, projection)
 	if err != nil {
 		return err
 	}
@@ -38,7 +33,7 @@ func (i *Instance) Scan(
 	return nil
 }
 
-func scan(ctx context.Context, tableName string, filterCondition string) ([]map[string]interface{}, error) {
+func scan(ctx context.Context, tableName, filterCondition, projection string) ([]map[string]interface{}, error) {
 	table, err := describeTable(ctx, tableName)
 	if err != nil {
 		return nil, err
@@ -49,13 +44,28 @@ func scan(ctx context.Context, tableName string, filterCondition string) ([]map[
 		TableName: aws.String(tableName),
 	}
 
+	builder := expression.NewBuilder()
+
 	// Filter condition
 	if len(filterCondition) != 0 {
 		c, err := analyseFilterCondition(filterCondition)
 		if err != nil {
 			return nil, err
 		}
-		builder := expression.NewBuilder().WithCondition(*c)
+		builder = builder.WithCondition(*c)
+	}
+
+	// Projection
+	if len(projection) != 0 {
+		p := strings.Split(projection, " ")
+		var pj expression.ProjectionBuilder
+		for i := range p {
+			pj = expression.AddNames(pj, expression.Name(p[i]))
+		}
+		builder = builder.WithProjection(pj)
+	}
+
+	if len(filterCondition) != 0 || len(projection) != 0 {
 		expr, err := builder.Build()
 		if err != nil {
 			return nil, err
@@ -63,6 +73,7 @@ func scan(ctx context.Context, tableName string, filterCondition string) ([]map[
 		input.ExpressionAttributeNames = expr.Names()
 		input.ExpressionAttributeValues = expr.Values()
 		input.FilterExpression = expr.Condition()
+		input.ProjectionExpression = expr.Projection()
 	}
 
 	resMap := make([]map[string]interface{}, 0, table.ItemCount)

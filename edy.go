@@ -12,12 +12,7 @@ type clientKey string
 const newClientKey clientKey = "client"
 
 type Edy interface {
-	Scan(
-		ctx context.Context,
-		w io.Writer,
-		tableName,
-		filterCondition string,
-	) error
+	Scan(ctx context.Context, w io.Writer, tableName, filterCondition, projection string) error
 	Query(
 		ctx context.Context,
 		w io.Writer,
@@ -25,7 +20,8 @@ type Edy interface {
 		partitionValue,
 		sortCondition,
 		filterCondition,
-		index string,
+		index,
+		projection string,
 	) error
 	DescribeTable(ctx context.Context, w io.Writer, tableName string) error
 }

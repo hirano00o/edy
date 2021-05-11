@@ -76,7 +76,8 @@ func query(
 	partitionValue,
 	sortCondition,
 	filterCondition,
-	index string,
+	index,
+	projection string,
 ) ([]map[string]interface{}, error) {
 	table, err := describeTable(ctx, tableName)
 	if err != nil {
@@ -133,6 +134,16 @@ func query(
 		builder = builder.WithCondition(*c)
 	}
 
+	// Projection
+	if len(projection) != 0 {
+		p := strings.Split(projection, " ")
+		var pj expression.ProjectionBuilder
+		for i := range p {
+			pj = expression.AddNames(pj, expression.Name(p[i]))
+		}
+		builder = builder.WithProjection(pj)
+	}
+
 	expr, err := builder.Build()
 	if err != nil {
 		return nil, err
@@ -143,6 +154,7 @@ func query(
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.KeyCondition(),
 		FilterExpression:          expr.Condition(),
+		ProjectionExpression:      expr.Projection(),
 	}
 	if len(index) != 0 {
 		input.IndexName = aws.String(index)
@@ -173,12 +185,13 @@ func (i *Instance) Query(
 	partitionValue,
 	sortCondition,
 	filterCondition,
-	index string,
+	index,
+	projection string,
 ) error {
 	cli := i.NewClient.CreateInstance()
 	ctx = context.WithValue(ctx, newClientKey, cli)
 
-	res, err := query(ctx, tableName, partitionValue, sortCondition, filterCondition, index)
+	res, err := query(ctx, tableName, partitionValue, sortCondition, filterCondition, index, projection)
 	if err != nil {
 		return err
 	}
