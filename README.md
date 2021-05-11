@@ -118,21 +118,22 @@ USAGE:
    edy query [command options] [arguments...]
 
 OPTIONS:
-   --table-name value, -t value  DynamoDB table name
-   --region value, -r value      AWS region
-   --profile value               AWS profile name
-   --local value                 Port number or full URL if you connect such as dynamodb-local and LocalStack.
-                                 ex. --local 8000
-   --partition value, -p value   The value of partition key
-   --sort value, -s value        The value and condition of sort key.
-                                 ex1. --sort "> 20"
-                                 ex2. --sort "between 20 25"
-                                 Available operator is =,<=,<,>=,>,between,begins_with
-   --index value, --idx value    Global secondary index name
-   --filter value, -f value      The condition if you use filter.
-                                 ex. --filter "Age,N >= 20 and Email,S in alice@example.com bob@example.com or not Birthplace,S exists"
-                                 Available operator is =,<=,<,>=,>,between,begins_with,exists,in,contains
-   --help, -h                    show help (default: false)
+   --table-name value, -t value    DynamoDB table name
+   --region value, -r value        AWS region
+   --profile value                 AWS profile name
+   --local value                   Port number or full URL if you connect such as dynamodb-local and LocalStack.
+                                   ex. --local 8000
+   --partition value, -p value     The value of partition key
+   --sort value, -s value          The value and condition of sort key.
+                                   ex1. --sort "> 20"
+                                   ex2. --sort "between 20 25"
+                                   Available operator is =,<=,<,>=,>,between,begins_with
+   --index value, --idx value      Global secondary index name
+   --filter value, -f value        The condition if you use filter.
+                                   ex. --filter "Age,N >= 20 and Email,S in alice@example.com bob@example.com or not Birthplace,S exists"
+                                   Available operator is =,<=,<,>=,>,between,begins_with,exists,in,contains
+   --projection value, --pj value  Identifies and retrieve the attributes that you want.
+   --help, -h                      show help (default: false)
 ```
 
 ## If use DynamoDB Local or LocalStack

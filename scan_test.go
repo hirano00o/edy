@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -19,6 +20,7 @@ func TestInstance_Scan(t *testing.T) {
 		ctx             context.Context
 		tableName       string
 		filterCondition string
+		projection      string
 	}
 	tests := []struct {
 		name    string
@@ -45,7 +47,7 @@ func TestInstance_Scan(t *testing.T) {
 				input := &dynamodb.ScanInput{
 					TableName: aws.String("TEST"),
 				}
-				m.ScanAPIClient.On("Scan", ctx, input).Return(scanOutputFixture(t), nil)
+				m.ScanAPIClient.On("Scan", ctx, input).Return(scanOutputFixture(t, ""), nil)
 				return m
 			},
 			wantW: jsonFixture(t, []map[string]interface{}{
@@ -87,7 +89,7 @@ func TestInstance_Scan(t *testing.T) {
 					ExpressionAttributeValues: expr.Values(),
 					FilterExpression:          expr.Condition(),
 				}
-				m.ScanAPIClient.On("Scan", ctx, input).Return(scanOutputFixture(t), nil)
+				m.ScanAPIClient.On("Scan", ctx, input).Return(scanOutputFixture(t, ""), nil)
 				return m
 			},
 			wantW: jsonFixture(t, []map[string]interface{}{
@@ -96,6 +98,47 @@ func TestInstance_Scan(t *testing.T) {
 					"TEST_SORT_ATTRIBUTE":      "TEST_SORT_VALUE_1",
 					"TEST_ATTRIBUTE_1":         "TEST_ATTRIBUTE_1_VALUE_1",
 					"TEST_ATTRIBUTE_2":         1,
+				},
+			}),
+		},
+		{
+			name: "Scan with projection",
+			args: args{
+				ctx:        context.Background(),
+				tableName:  "TEST",
+				projection: "TEST_ATTRIBUTE_1 TEST_ATTRIBUTE_2",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				table := describeTableOutputFixture(t, false)
+				m.DescribeTableAPIClient.On("DescribeTable", ctx, &dynamodb.DescribeTableInput{
+					TableName: aws.String("TEST"),
+				}).Return(table, nil)
+				pj := expression.NamesList(
+					expression.Name("TEST_ATTRIBUTE_1"),
+					expression.Name("TEST_ATTRIBUTE_2"),
+				)
+				expr, err := expression.NewBuilder().WithProjection(pj).Build()
+				if err != nil {
+					t.Fatalf("expression build error: %v", err)
+				}
+				input := &dynamodb.ScanInput{
+					TableName:                 aws.String("TEST"),
+					ExpressionAttributeNames:  expr.Names(),
+					ExpressionAttributeValues: expr.Values(),
+					ProjectionExpression:      expr.Projection(),
+				}
+				m.ScanAPIClient.On("Scan", ctx, input).
+					Return(scanOutputFixture(t, "TEST_ATTRIBUTE_1 TEST_ATTRIBUTE_2"), nil)
+				return m
+			},
+			wantW: jsonFixture(t, []map[string]interface{}{
+				{
+					"TEST_ATTRIBUTE_1": "TEST_ATTRIBUTE_1_VALUE_1",
+					"TEST_ATTRIBUTE_2": 1,
 				},
 			}),
 		},
@@ -130,7 +173,7 @@ func TestInstance_Scan(t *testing.T) {
 				NewClient: mock,
 			}
 			w := &bytes.Buffer{}
-			err := i.Scan(tt.args.ctx, w, tt.args.tableName, tt.args.filterCondition)
+			err := i.Scan(tt.args.ctx, w, tt.args.tableName, tt.args.filterCondition, tt.args.projection)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Scan() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -142,8 +185,26 @@ func TestInstance_Scan(t *testing.T) {
 	}
 }
 
-func scanOutputFixture(t *testing.T) *dynamodb.ScanOutput {
+func scanOutputFixture(t *testing.T, pj string) *dynamodb.ScanOutput {
 	t.Helper()
+	if len(pj) != 0 {
+		m := map[string]types.AttributeValue{
+			"TEST_PARTITION_ATTRIBUTE": &types.AttributeValueMemberS{Value: "TEST_PARTITION_VALUE_1"},
+			"TEST_SORT_ATTRIBUTE":      &types.AttributeValueMemberS{Value: "TEST_SORT_VALUE_1"},
+			"TEST_ATTRIBUTE_1":         &types.AttributeValueMemberS{Value: "TEST_ATTRIBUTE_1_VALUE_1"},
+			"TEST_ATTRIBUTE_2":         &types.AttributeValueMemberN{Value: "1"},
+		}
+		var rMap = map[string]types.AttributeValue{}
+		for _, s := range strings.Split(pj, " ") {
+			rMap[s] = m[s]
+		}
+		return &dynamodb.ScanOutput{
+			Items: []map[string]types.AttributeValue{
+				rMap,
+			},
+			Count: 1,
+		}
+	}
 	return &dynamodb.ScanOutput{
 		Items: []map[string]types.AttributeValue{
 			{

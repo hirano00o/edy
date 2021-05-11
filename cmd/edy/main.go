@@ -72,6 +72,11 @@ func run(w io.Writer, args []string) error {
 				"\tAvailable operator is =,<=,<,>=,>,between,begins_with,exists,in,contains",
 			Aliases: []string{"f"},
 		},
+		&cli.StringFlag{
+			Name:    "projection",
+			Usage:   "Identifies and retrieve the attributes that you want.",
+			Aliases: []string{"pj"},
+		},
 	}
 	app := &cli.App{
 		Name:    meta.CliName,
@@ -118,6 +123,7 @@ func queryCmd(w io.Writer) cli.ActionFunc {
 			ctx.String("sort"),
 			ctx.String("filter"),
 			ctx.String("index"),
+			ctx.String("projection"),
 		)
 	}
 }
@@ -133,6 +139,7 @@ func scanCmd(w io.Writer) cli.ActionFunc {
 			w,
 			ctx.String("table-name"),
 			ctx.String("filter"),
+			ctx.String("projection"),
 		)
 	}
 }
