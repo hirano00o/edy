@@ -1,0 +1,320 @@
+{
+  "User": [
+    {
+      "PutRequest": {
+        "Item": {
+          "ID": {
+            "N": "1"
+          },
+          "Name": {
+            "S": "Alice"
+          },
+          "Email": {
+            "S": "alice@example.com"
+          },
+          "Address": {
+            "M": {
+              "State": {
+                "S": "Arkansas"
+              },
+              "City": {
+                "S": "Little Rock"
+              }
+            }
+          },
+          "Age": {
+            "N": "20"
+          },
+          "Birthday": {
+            "M": {
+              "Year": {
+                "N": "2000"
+              },
+              "Month": {
+                "N": "8"
+              },
+              "Day": {
+                "N": "12"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "ID": {
+            "N": "2"
+          },
+          "Name": {
+            "S": "Bob"
+          },
+          "Email": {
+            "S": "bob@example.com"
+          },
+          "Address": {
+            "M": {
+              "State": {
+                "S": "Arkansas"
+              },
+              "City": {
+                "S": "Fort Smith"
+              }
+            }
+          },
+          "Age": {
+            "N": "22"
+          },
+          "Birthday": {
+            "M": {
+              "Year": {
+                "N": "1994"
+              },
+              "Month": {
+                "N": "5"
+              },
+              "Day": {
+                "N": "1"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "ID": {
+            "N": "3"
+          },
+          "Name": {
+            "S": "Carol"
+          },
+          "Email": {
+            "S": "carol@example.com"
+          },
+          "Address": {
+            "M": {
+              "State": {
+                "S": "California"
+              },
+              "City": {
+                "S": "Los Angeles"
+              }
+            }
+          },
+          "Age": {
+            "N": "24"
+          },
+          "Birthday": {
+            "M": {
+              "Year": {
+                "N": "1996"
+              },
+              "Month": {
+                "N": "4"
+              },
+              "Day": {
+                "N": "21"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "ID": {
+            "N": "4"
+          },
+          "Name": {
+            "S": "Charlie"
+          },
+          "Email": {
+            "S": "charlie@example.com"
+          },
+          "Address": {
+            "M": {
+              "State": {
+                "S": "California"
+              },
+              "City": {
+                "S": "Los Angeles"
+              }
+            }
+          },
+          "Age": {
+            "N": "24"
+          },
+          "Birthday": {
+            "M": {
+              "Year": {
+                "N": "1996"
+              },
+              "Month": {
+                "N": "3"
+              },
+              "Day": {
+                "N": "21"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "ID": {
+            "N": "5"
+          },
+          "Name": {
+            "S": "Dave"
+          },
+          "Email": {
+            "S": "dave@example.com"
+          },
+          "Address": {
+            "M": {
+              "State": {
+                "S": "Delaware"
+              },
+              "City": {
+                "S": "Dover"
+              }
+            }
+          },
+          "Age": {
+            "N": "20"
+          },
+          "Birthday": {
+            "M": {
+              "Year": {
+                "N": "2000"
+              },
+              "Month": {
+                "N": "7"
+              },
+              "Day": {
+                "N": "15"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "ID": {
+            "N": "6"
+          },
+          "Name": {
+            "S": "Ellen"
+          },
+          "Email": {
+            "S": "ellene@example.com"
+          },
+          "Age": {
+            "N": "24"
+          },
+          "Birthday": {
+            "M": {
+              "Year": {
+                "N": "1996"
+              },
+              "Month": {
+                "N": "7"
+              },
+              "Day": {
+                "N": "1"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "ID": {
+            "N": "7"
+          },
+          "Name": {
+            "S": "Eve"
+          },
+          "Email": {
+            "S": "eve@example.com"
+          },
+          "Age": {
+            "N": "26"
+          },
+          "Birthday": {
+            "M": {
+              "Year": {
+                "N": "1994"
+              },
+              "Month": {
+                "N": "10"
+              },
+              "Day": {
+                "N": "1"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "ID": {
+            "N": "10"
+          },
+          "Name": {
+            "S": "Frank"
+          },
+          "Email": {
+            "S": "frank@example.com"
+          },
+          "Age": {
+            "N": "30"
+          },
+          "Birthday": {
+            "M": {
+              "Year": {
+                "N": "1991"
+              },
+              "Month": {
+                "N": "11"
+              },
+              "Day": {
+                "N": "1"
+              }
+            }
+          },
+          "Address": {
+            "M": {
+              "State": {
+                "S": "Delaware"
+              }
+            }
+          },
+          "Interest": {
+            "M": {
+              "SNS": {
+                "SS": [
+                  "Facebook",
+                  "Twitter",
+                  "Instagram"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
