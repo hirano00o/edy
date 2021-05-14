@@ -6,7 +6,10 @@ setup () {
   echo "Setup integration test."
   echo ""
   docker run --rm --name integration_test -d -p 8000:8000 amazon/dynamodb-local >/dev/null
-  sleep 1
+  while ! nc localhost 8000 -v -w 1 > /dev/null
+  do
+    sleep 1
+  done
 
   if ! aws dynamodb create-table \
     --table-name User \
