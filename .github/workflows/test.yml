@@ -17,5 +17,9 @@ jobs:
           go-version: '1.16.x'
       - name: Test
         run: go test -covermode atomic ./...
+      - name: Install aws cli
+        uses: unfor19/install-aws-cli-action@v1
+        with:
+          version: 2
       - name: Integration test
         run: sh test/run.sh
