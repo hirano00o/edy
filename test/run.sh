@@ -12,6 +12,7 @@ setup () {
   done
 
   if ! aws dynamodb create-table \
+    --region ap-northeast-1 \
     --table-name User \
     --attribute-definitions AttributeName=ID,AttributeType=N AttributeName=Name,AttributeType=S AttributeName=Email,AttributeType=S \
     --key-schema AttributeName=ID,KeyType=HASH AttributeName=Name,KeyType=RANGE \
@@ -30,7 +31,7 @@ setup () {
     exit 1
   fi
 
-  if ! aws dynamodb batch-write-item --request-items file://"${SCRIPT_DIR}"/test_data.json --endpoint http://localhost:8000 >/dev/null;
+  if ! aws dynamodb batch-write-item --region ap-northeast-1 --request-items file://"${SCRIPT_DIR}"/test_data.json --endpoint http://localhost:8000 >/dev/null;
   then
     exit 1
   fi
