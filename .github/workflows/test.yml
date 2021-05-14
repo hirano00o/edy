@@ -27,5 +27,13 @@ jobs:
         uses: unfor19/install-aws-cli-action@v1
         with:
           version: 2
+      - name: Setup DynamoDB Local
+        uses: rrainn/dynamodb-action@v2.0.0
+        with:
+          port: 8000
+          cors: '*'
       - name: Integration test
         run: sh test/run.sh
+        env:
+          AWS_ACCESS_KEY_ID: dummy
+          AWS_SECRET_ACCESS_KEY: dummy
