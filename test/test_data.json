@@ -201,6 +201,22 @@
                 "N": "15"
               }
             }
+          },
+          "Interest": {
+            "M": {
+              "SNS": {
+                "SS": [
+                  "Twitter",
+                  "Instagram"
+                ]
+              },
+              "Video": {
+                "SS": [
+                  "YouTube",
+                  "TikTok"
+                ]
+              }
+            }
           }
         }
       }
@@ -232,6 +248,15 @@
                 "N": "1"
               }
             }
+          },
+          "Interest": {
+            "M": {
+              "Video": {
+                "SS": [
+                  "YouTube"
+                ]
+              }
+            }
           }
         }
       }
@@ -261,6 +286,17 @@
               },
               "Day": {
                 "N": "1"
+              }
+            }
+          },
+          "Interest": {
+            "M": {
+              "SNS": {
+                "SS": [
+                  "Facebook",
+                  "LinkedIn",
+                  "Twitter"
+                ]
               }
             }
           }
@@ -309,6 +345,12 @@
                   "Facebook",
                   "Twitter",
                   "Instagram"
+                ]
+              },
+              "Video": {
+                "SS": [
+                  "YouTube",
+                  "TikTok"
                 ]
               }
             }

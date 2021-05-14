@@ -1,0 +1,17 @@
+[
+  {
+    "Address": {
+      "City": "Los Angeles",
+      "State": "California"
+    },
+    "Age": 24,
+    "Birthday": {
+      "Day": 21,
+      "Month": 3,
+      "Year": 1996
+    },
+    "Email": "charlie@example.com",
+    "ID": 4,
+    "Name": "Charlie"
+  }
+]

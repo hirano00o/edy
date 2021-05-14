@@ -20,6 +20,8 @@ jobs:
           go-version: '1.16.x'
       - name: Test
         run: go test -coverprofile coverage.out -covermode atomic ./...
+      - name: Integration test
+        run: sh test/run.sh
       - name: Convert coverage to lcov
         uses: jandelgado/gcov2lcov-action@v1.0.8
         with:

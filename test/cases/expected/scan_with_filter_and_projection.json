@@ -1,0 +1,11 @@
+[
+  {
+    "Address": {
+      "City": "Dover"
+    },
+    "Email": "dave@example.com"
+  },
+  {
+    "Email": "frank@example.com"
+  }
+]
