@@ -1,8 +1,9 @@
 # edy
 
-[![test](https://github.com/hirano00o/edy/actions/workflows/test.yml/badge.svg)](https://github.com/hirano00o/edy/actions/workflows/test.yml)
+[![Release](https://github.com/hirano00o/edy/actions/workflows/release.yml/badge.svg)](https://github.com/hirano00o/edy/actions/workflows/release.yml)
 [![Coverage Status](https://coveralls.io/repos/github/hirano00o/edy/badge.svg?branch=master)](https://coveralls.io/github/hirano00o/edy?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hirano00o/edy)](https://goreportcard.com/report/github.com/hirano00o/edy)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 edy is a command line interface designed to make DynamoDB easy to use.
 When you query or scan on DynamoDB with AWS CLI, you have to write a lot of keys and values and options.
