@@ -1,9 +1,15 @@
 # edy
-edy is a command line interface designed to make DynamoDB easy to use.
 
 [![test](https://github.com/hirano00o/edy/actions/workflows/test.yml/badge.svg)](https://github.com/hirano00o/edy/actions/workflows/test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/hirano00o/edy/badge.svg?branch=master)](https://coveralls.io/github/hirano00o/edy?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hirano00o/edy)](https://goreportcard.com/report/github.com/hirano00o/edy)
+
+edy is a command line interface designed to make DynamoDB easy to use.
+When you query or scan on DynamoDB with AWS CLI, you have to write a lot of keys and values and options.
+If you run it many times, it's very hard. Also, the results are deeply nested and difficult to read.
+We are developing `edy` to make the results easier to handle and in order to reduce writing.
+Currently, `scan`, `query` (and `describe-table`) are available. Options support filter and projection, GSI.
+Other commands and options are under development.
 
 # Installation
 ## Download Binaries
@@ -145,4 +151,3 @@ This option can specify the port number or full url, such as `--local 8000` or `
 
 * Implement other commands such as create and put and batch.
 * Modify `scan` and` query` not to call `describe` internally every time.
-* Add integration test.

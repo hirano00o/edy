@@ -1,0 +1,22 @@
+{
+  "tableArn": "arn:aws:dynamodb:ddblocal:000000000000:table/User",
+  "tableName": "User",
+  "partitionKey": {
+    "name": "ID",
+    "type": "N"
+  },
+  "sortKey": {
+    "name": "Name",
+    "type": "S"
+  },
+  "gsi": [
+    {
+      "indexName": "EmailIndex",
+      "partitionKey": {
+        "name": "Email",
+        "type": "S"
+      }
+    }
+  ],
+  "itemCount": 8
+}

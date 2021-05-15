@@ -15,15 +15,26 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '1.16.x'
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - name: Test
-        run: go test -coverprofile coverage.out -covermode atomic ./...
-      - name: Convert coverage to lcov
-        uses: jandelgado/gcov2lcov-action@v1.0.8
+        run: go test -covermode atomic ./...
+      - name: Install aws cli
+        uses: unfor19/install-aws-cli-action@v1
         with:
-          infile: coverage.out
-          outfile: coverage.lcov
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
+          version: 2
+      - name: Setup DynamoDB Local
+        uses: rrainn/dynamodb-action@v2.0.0
         with:
-          github-token: ${{ github.token }}
-          path-to-lcov: coverage.lcov
+          port: 8000
+          cors: '*'
+      - name: Integration test
+        run: sh test/run.sh
+        env:
+          AWS_ACCESS_KEY_ID: dummy
+          AWS_SECRET_ACCESS_KEY: dummy
+          AWS_REGION: ap-northeast-1
