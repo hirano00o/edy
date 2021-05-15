@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_DIR=$(dirname "$0")
+SCRIPT_DIR=${1:-$(dirname "$0")}
 
 initialise() {
   if ! aws dynamodb create-table \

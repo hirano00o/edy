@@ -109,6 +109,40 @@ func run(w io.Writer, args []string) error {
 	return app.Run(args)
 }
 
+func cmd(w io.Writer) cli.ActionFunc {
+	return func(ctx *cli.Context) error {
+		c, err := client.New(ctx.Context, getOptions(ctx))
+		if err != nil {
+			return err
+		}
+		switch ctx.Command.Name {
+		case "describe":
+			return newEdyClient(c).DescribeTable(ctx.Context, w, ctx.String("table-name"))
+		case "scan":
+			return newEdyClient(c).Scan(
+				ctx.Context,
+				w,
+				ctx.String("table-name"),
+				ctx.String("filter"),
+				ctx.String("projection"),
+			)
+		case "query":
+			return newEdyClient(c).Query(
+				ctx.Context,
+				w,
+				ctx.String("table-name"),
+				ctx.String("partition"),
+				ctx.String("sort"),
+				ctx.String("filter"),
+				ctx.String("index"),
+				ctx.String("projection"),
+			)
+		default:
+			return nil
+		}
+	}
+}
+
 func queryCmd(w io.Writer) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
 		c, err := client.New(ctx.Context, getOptions(ctx))

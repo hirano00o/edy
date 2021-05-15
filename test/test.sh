@@ -22,4 +22,4 @@ tearDown () {
 trap tearDown 0 1 2 3 15
 setup
 
-sh "${SCRIPT_DIR}"/run.sh
+sh "${SCRIPT_DIR}/run.sh" "${SCRIPT_DIR}"
