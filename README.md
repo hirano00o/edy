@@ -1,7 +1,7 @@
 # edy
 
 [![Release](https://github.com/hirano00o/edy/actions/workflows/release.yml/badge.svg)](https://github.com/hirano00o/edy/actions/workflows/release.yml)
-[![Coverage Status](https://coveralls.io/repos/github/hirano00o/edy/badge.svg?branch=master)](https://coveralls.io/github/hirano00o/edy?branch=master)
+[![codecov](https://codecov.io/gh/hirano00o/edy/branch/master/graph/badge.svg?token=VYSBN9XRON)](https://codecov.io/gh/hirano00o/edy)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hirano00o/edy)](https://goreportcard.com/report/github.com/hirano00o/edy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
