@@ -11,6 +11,7 @@ type MockDynamoDBAPI struct {
 	DescribeTableAPIClient
 	QueryAPIClient
 	ScanAPIClient
+	PutItemClient
 }
 
 func (_m *MockDynamoDBAPI) CreateInstance() client.DynamoDB {

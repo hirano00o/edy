@@ -24,6 +24,7 @@ type Edy interface {
 		projection string,
 	) error
 	DescribeTable(ctx context.Context, w io.Writer, tableName string) error
+	Put(ctx context.Context, w io.Writer, tableName, item string) error
 }
 
 type Instance struct {
