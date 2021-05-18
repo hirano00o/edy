@@ -19,7 +19,7 @@ jobs:
         with:
           go-version: '1.16.x'
       - name: Test
-        run: go test -coverprofile coverage.out -covermode atomic ./...
+        run: go test -race -coverprofile coverage.txt -covermode atomic ./...
       - name: Setup DynamoDB Local
         uses: rrainn/dynamodb-action@v2.0.0
         with:
@@ -31,16 +31,8 @@ jobs:
           AWS_ACCESS_KEY_ID: dummy
           AWS_SECRET_ACCESS_KEY: dummy
           AWS_REGION: ap-northeast-1
-      - name: Convert coverage to lcov
-        uses: jandelgado/gcov2lcov-action@v1.0.8
-        with:
-          infile: coverage.out
-          outfile: coverage.lcov
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ github.token }}
-          path-to-lcov: coverage.lcov
+      - name: Upload to codecov
+        uses: codecov/codecov-action@v1
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
