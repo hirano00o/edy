@@ -82,7 +82,7 @@ func run(w io.Writer, args []string) error {
 		&cli.StringFlag{
 			Name: "item",
 			Usage: "Specify the item you want to create.\n" +
-				"\tex. --item \"{\"ID\":3,\"Name\":\"Alice\",\"Interest\":{\"SNS\":[\"Twitter\",\"Facebook\"]}}\"",
+				"\tex. --item '{\"ID\":3,\"Name\":\"Alice\",\"Interest\":{\"SNS\":[\"Twitter\",\"Facebook\"]}}'",
 			Aliases: []string{"i"},
 		},
 	}
