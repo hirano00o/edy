@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"strconv"
 	"strings"
 
@@ -177,11 +176,10 @@ func put(ctx context.Context, tableName, item string) (map[string]int, error) {
 		TableName: aws.String(tableName),
 		Item:      i,
 	}
-	res, err := cli.PutItem(ctx, input)
+	_, err = cli.PutItem(ctx, input)
 	if err != nil {
 		return nil, err
 	}
-	log.Println(res.ResultMetadata)
 	return map[string]int{"unprocessed": 0}, nil
 }
 

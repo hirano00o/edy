@@ -30,7 +30,7 @@ run_such_put_helper() {
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME} failed to execute ${CMD}"
     exit 1
   fi
-  if ! printf "{\n  \"unprocessed\": 1\n}\n" | diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json > tmp.diff;
+  if ! printf "{\n  \"unprocessed\": 0\n}\n" | diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json - > tmp.diff;
   then
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME}"
     sed -e "s@${CASE_DIR}/${TEST_NAME}_actual.json@actual@" -e "s@+++ -@+++ expected@" tmp.diff
@@ -38,12 +38,11 @@ run_such_put_helper() {
     exit 1
   fi
 
-  aws dynamodb query \
-    --region ap-northeast-1 \
-    --table-name User \
-    --key-condition-expression "${KEY_CONDITION}" \
-    --expression-attribute-values "${ATTRIBUTE_VALUES}" \
-    --endpoint-url http://localhost:8000 > "${CASE_DIR}/${TEST_NAME}"_actual.json;
+  if [ "${SORT_CONDITION}" == "" ]; then
+    edy q -t User -p "${PARTITION_VALUE}" --local 8000 > "${CASE_DIR}/${TEST_NAME}"_actual.json;
+  else
+    edy q -t User -p "${PARTITION_VALUE}" -s "${SORT_CONDITION}" --local 8000 > "${CASE_DIR}/${TEST_NAME}"_actual.json;
+  fi
 
   if ! diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json "${EXPECTED_FILE}" > tmp.diff;
   then
