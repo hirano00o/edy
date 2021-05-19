@@ -49,11 +49,11 @@ Please see [Configuration and credential file settings - AWS Command Line Interf
 
 ## Overview
 
-Currently, available commands are `describe`,` scan`, `query`.
+Currently, available commands are `describe`, `scan`, `query`, `put`.
 
 ### describe
 
-The `describe` command internally executes` aws dynamodb describe-table`.
+The `describe` command behaves similarly to `aws dynamodb describe-table`.
 
 ```console
 $ edy describe --table-name User  # Shortened version: edy d -t User
@@ -83,7 +83,7 @@ $ edy describe --table-name User  # Shortened version: edy d -t User
 
 ### scan
 
-The `scan` command internally executes` aws dynamodb scan`. You can filter the results by using the `filter` option. Please see `edy s -h` for details.
+The `scan` command behaves similarly to `aws dynamodb scan`.  You can filter the results by using the `filter` option. Please see `edy s -h` for details.
 
 ```console
 $ edy scan --table-name User --filter "not Birthplace,S exists and Age,N > 25" # Shortened version: edy s -t User -f "not Birthplace,S exists and Age,N > 25"
@@ -99,7 +99,7 @@ $ edy scan --table-name User --filter "not Birthplace,S exists and Age,N > 25" #
 
 ### query
 
-The `query` command internally executes` aws dynamodb query`.
+The `query` command behaves similarly to `aws dynamodb query`.
 
 ```console
 $ edy query --table-name User --partition 1 # Shortened version: edy q -t User -p 1
@@ -141,6 +141,19 @@ OPTIONS:
                                    Available operator is =,<=,<,>=,>,between,begins_with,exists,in,contains
    --projection value, --pj value  Identifies and retrieve the attributes that you want.
    --help, -h                      show help (default: false)
+```
+
+### put
+
+The `put` command behaves similarly to `aws dynamodb put-item`. It creates a record by passing json to the `--item(-i)` option.  
+Supported type is `S`, `N`, `SS`, `NS`, `M`, `L`, `BOOL`, `NULL`.
+
+```console
+$ edy put --table-name User --item '{"ID":3, "Name":"Alice", "Interest":{"SNS":["Twitter","Facebook"]}}'
+# Shortened version: edy p -i '{"ID":3, "Name":"Alice", "Interest":{"SNS":["Twitter","Facebook"]}}'
+{
+  "unprocessed": 0
+}
 ```
 
 ## If use DynamoDB Local or LocalStack

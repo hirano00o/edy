@@ -19,6 +19,11 @@ type DynamoDB interface {
 	dynamodb.DescribeTableAPIClient
 	dynamodb.ScanAPIClient
 	dynamodb.QueryAPIClient
+	PutItem(
+		ctx context.Context,
+		params *dynamodb.PutItemInput,
+		optFns ...func(*dynamodb.Options),
+	) (*dynamodb.PutItemOutput, error)
 }
 
 type NewClient interface {

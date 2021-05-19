@@ -78,6 +78,14 @@ func run(w io.Writer, args []string) error {
 			Aliases: []string{"pj"},
 		},
 	}
+	putOptions := []cli.Flag{
+		&cli.StringFlag{
+			Name: "item",
+			Usage: "Specify the item you want to create.\n" +
+				"\tex. --item '{\"ID\":3,\"Name\":\"Alice\",\"Interest\":{\"SNS\":[\"Twitter\",\"Facebook\"]}}'",
+			Aliases: []string{"i"},
+		},
+	}
 	app := &cli.App{
 		Name:    meta.CliName,
 		Version: meta.Version,
@@ -102,6 +110,13 @@ func run(w io.Writer, args []string) error {
 				Usage:   "Query table",
 				Aliases: []string{"q"},
 				Flags:   append(append(baseOptions, queryOptions...), scanQueryOptions...),
+				Action:  cmd(w),
+			},
+			{
+				Name:    "put",
+				Usage:   "Put item",
+				Aliases: []string{"p"},
+				Flags:   append(baseOptions, putOptions...),
 				Action:  cmd(w),
 			},
 		},
@@ -136,6 +151,13 @@ func cmd(w io.Writer) cli.ActionFunc {
 				ctx.String("filter"),
 				ctx.String("index"),
 				ctx.String("projection"),
+			)
+		case "put":
+			return newEdyClient(c).Put(
+				ctx.Context,
+				w,
+				ctx.String("table-name"),
+				ctx.String("item"),
 			)
 		default:
 			return nil
