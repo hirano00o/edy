@@ -152,7 +152,7 @@ Supported type is `S`, `N`, `SS`, `NS`, `M`, `L`, `BOOL`, `NULL`.
 $ edy put --table-name User --item '{"ID":3, "Name":"Alice", "Interest":{"SNS":["Twitter","Facebook"]}}'
 # Shortened version: edy p -i '{"ID":3, "Name":"Alice", "Interest":{"SNS":["Twitter","Facebook"]}}'
 {
-  "succeeded": 1
+  "unprocessed": 0
 }
 ```
 

@@ -51,7 +51,7 @@ func TestInstance_Put(t *testing.T) {
 
 				return m
 			},
-			wantW: "{\n  \"succeeded\": 1\n}\n",
+			wantW: "{\n  \"unprocessed\": 0\n}\n",
 		},
 		{
 			name: "Put 2 items",
@@ -81,7 +81,7 @@ func TestInstance_Put(t *testing.T) {
 
 				return m
 			},
-			wantW: "{\n  \"succeeded\": 1\n}\n",
+			wantW: "{\n  \"unprocessed\": 0\n}\n",
 		},
 		{
 			name: "Put items with map",
@@ -134,7 +134,7 @@ func TestInstance_Put(t *testing.T) {
 
 				return m
 			},
-			wantW: "{\n  \"succeeded\": 1\n}\n",
+			wantW: "{\n  \"unprocessed\": 0\n}\n",
 		},
 		{
 			name: "Put items with list",
@@ -171,7 +171,7 @@ func TestInstance_Put(t *testing.T) {
 
 				return m
 			},
-			wantW: "{\n  \"succeeded\": 1\n}\n",
+			wantW: "{\n  \"unprocessed\": 0\n}\n",
 		},
 		{
 			name: "Put items with null",
@@ -198,7 +198,7 @@ func TestInstance_Put(t *testing.T) {
 
 				return m
 			},
-			wantW: "{\n  \"succeeded\": 1\n}\n",
+			wantW: "{\n  \"unprocessed\": 0\n}\n",
 		},
 		{
 			name: "Error unmarshal JSON",

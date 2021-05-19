@@ -182,7 +182,7 @@ func put(ctx context.Context, tableName, item string) (map[string]int, error) {
 		return nil, err
 	}
 	log.Println(res.ResultMetadata)
-	return map[string]int{"succeeded": 1}, nil
+	return map[string]int{"unprocessed": 0}, nil
 }
 
 func (i *Instance) Put(ctx context.Context, w io.Writer, tableName, item string) error {

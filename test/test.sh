@@ -11,7 +11,7 @@ setup () {
 
 tearDown () {
   rm -f "${SCRIPT_DIR}"/edy "${SCRIPT_DIR}"/cases/*.json
-  docker stop integration_test >/dev/null
+  #docker stop integration_test >/dev/null
   echo ""
   echo "Finished integration test."
 }
