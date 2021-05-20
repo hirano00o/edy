@@ -33,6 +33,10 @@ jobs:
           AWS_REGION: ap-northeast-1
       - name: Upload to codecov
         uses: codecov/codecov-action@v1
+      - name: Remove test and coverage files
+        run: |
+          rm -f test/edy test/cases/*.json
+          rm -f coverage.txt
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
