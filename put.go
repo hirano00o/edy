@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -154,17 +155,40 @@ func recursiveAnalyseJSON(items map[string]interface{}) (map[string]types.Attrib
 	return m, nil
 }
 
-func analyseItem(item string) (map[string]types.AttributeValue, error) {
+func analyseItem(item string) (interface{}, error) {
 	var jsonItem map[string]interface{}
-	err := json.Unmarshal(bytes.NewBufferString(item).Bytes(), &jsonItem)
+	var jsonItems []map[string]interface{}
+	var err error
+	if strings.HasPrefix(item, "[") {
+		err = json.Unmarshal(bytes.NewBufferString(item).Bytes(), &jsonItems)
+	} else {
+		err = json.Unmarshal(bytes.NewBufferString(item).Bytes(), &jsonItem)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("invalid json format: %v", err)
+	}
+
+	if jsonItems != nil {
+		putItems := make([]types.WriteRequest, len(jsonItems))
+		var res map[string]types.AttributeValue
+		for i := range jsonItems {
+			res, err = recursiveAnalyseJSON(jsonItems[i])
+			if err != nil {
+				return nil, err
+			}
+			putItems[i] = types.WriteRequest{
+				PutRequest: &types.PutRequest{
+					Item: res,
+				},
+			}
+		}
+		return putItems, nil
 	}
 
 	return recursiveAnalyseJSON(jsonItem)
 }
 
-func put(ctx context.Context, tableName, item string) (map[string]int, error) {
+func put(ctx context.Context, tableName, item string) (map[string]interface{}, error) {
 	cli := ctx.Value(newClientKey).(client.DynamoDB)
 
 	i, err := analyseItem(item)
@@ -172,15 +196,45 @@ func put(ctx context.Context, tableName, item string) (map[string]int, error) {
 		return nil, err
 	}
 
-	input := &dynamodb.PutItemInput{
-		TableName: aws.String(tableName),
-		Item:      i,
+	if reflect.TypeOf(i).Kind() == reflect.Map {
+		input := &dynamodb.PutItemInput{
+			TableName: aws.String(tableName),
+			Item:      i.(map[string]types.AttributeValue),
+		}
+		_, err = cli.PutItem(ctx, input)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		var res *dynamodb.BatchWriteItemOutput
+		retryMax := 3
+		input := &dynamodb.BatchWriteItemInput{
+			RequestItems: map[string][]types.WriteRequest{
+				tableName: i.([]types.WriteRequest),
+			},
+		}
+		for {
+			res, err = cli.BatchWriteItem(ctx, input)
+			if err != nil {
+				return nil, err
+			}
+			unprocessedCount := len(res.UnprocessedItems[tableName])
+			if unprocessedCount == 0 {
+				return map[string]interface{}{"unprocessed": 0}, nil
+			}
+			retryMax--
+			if retryMax < 0 && unprocessedCount == 0 {
+				break
+			} else if retryMax < 0 && unprocessedCount > 0 {
+				return map[string]interface{}{
+					"unprocessed": unprocessedCount,
+					"items":       res.UnprocessedItems[tableName],
+				}, nil
+			}
+			input.RequestItems = res.UnprocessedItems
+		}
 	}
-	_, err = cli.PutItem(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-	return map[string]int{"unprocessed": 0}, nil
+	return map[string]interface{}{"unprocessed": 0}, nil
 }
 
 func (i *Instance) Put(ctx context.Context, w io.Writer, tableName, item string) error {
