@@ -357,6 +357,21 @@
           }
         }
       }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "ID": {
+            "N": "99"
+          },
+          "Name": {
+            "S": "DELETE_USER"
+          },
+          "Email": {
+            "S": "delet_user@example.com"
+          }
+        }
+      }
     }
   ]
 }

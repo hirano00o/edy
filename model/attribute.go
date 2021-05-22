@@ -3,11 +3,14 @@ package model
 import (
 	"bytes"
 	"strconv"
+
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 type AttributeType interface {
 	String() string
 	Value(s string) (interface{}, error)
+	ConvertValueMember(s string) types.AttributeValue
 }
 
 type S struct{}
@@ -24,6 +27,12 @@ func (S) Value(s string) (interface{}, error) {
 	return s, nil
 }
 
+func (S) ConvertValueMember(s string) types.AttributeValue {
+	return &types.AttributeValueMemberS{
+		Value: s,
+	}
+}
+
 func (N) String() string {
 	return "N"
 }
@@ -36,6 +45,12 @@ func (N) Value(s string) (interface{}, error) {
 	return i, nil
 }
 
+func (N) ConvertValueMember(s string) types.AttributeValue {
+	return &types.AttributeValueMemberN{
+		Value: s,
+	}
+}
+
 func (B) String() string {
 	return "B"
 }
@@ -44,12 +59,24 @@ func (B) Value(s string) (interface{}, error) {
 	return bytes.NewBufferString(s).Bytes(), nil
 }
 
+func (B) ConvertValueMember(s string) types.AttributeValue {
+	return &types.AttributeValueMemberB{
+		Value: bytes.NewBufferString(s).Bytes(),
+	}
+}
+
 func (SS) String() string {
 	return "SS"
 }
 
 func (SS) Value(s string) (interface{}, error) {
 	return s, nil
+}
+
+func (SS) ConvertValueMember(s string) types.AttributeValue {
+	return &types.AttributeValueMemberSS{
+		Value: []string{s},
+	}
 }
 
 func (NS) String() string {
@@ -62,6 +89,12 @@ func (NS) Value(s string) (interface{}, error) {
 		return 0, err
 	}
 	return i, nil
+}
+
+func (NS) ConvertValueMember(s string) types.AttributeValue {
+	return &types.AttributeValueMemberNS{
+		Value: []string{s},
+	}
 }
 
 var (

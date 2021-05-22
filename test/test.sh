@@ -16,6 +16,19 @@ tearDown () {
   echo "Finished integration test."
 }
 
+UNAME="$(uname)"
+if [ "${UNAME}" == "Darwin" -o "${UNAME}" == "Linux" ]; then
+  if [ "$(which jq)" == "" ]; then
+    echo "Please install jq command"
+    exit 1
+  fi
+else
+  if [ "$(where jq)" == "" ]; then
+    echo "Please install jq command"
+    exit 1
+  fi
+fi
+
 trap tearDown 0 1 2 3 15
 setup
 
