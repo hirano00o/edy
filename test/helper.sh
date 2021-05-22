@@ -30,7 +30,7 @@ run_such_put_helper() {
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME} failed to execute ${CMD}"
     exit 1
   fi
-  if ! printf "{\n  \"unprocessed\": 0\n}\n" | diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json - > tmp.diff;
+  if ! printf "{\n  \"unprocessed\": []\n}\n" | diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json - > tmp.diff;
   then
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME}"
     sed -e "s@${CASE_DIR}/${TEST_NAME}_actual.json@actual@" -e "s@+++ -@+++ expected@" tmp.diff
@@ -38,12 +38,7 @@ run_such_put_helper() {
     exit 1
   fi
 
-  if [ -z "${SORT_CONDITION}" ];
-  then
-    "${SCRIPT_ROOT_DIR}/edy" q -t User -p "${PARTITION_VALUE}" --local 8000 > "${CASE_DIR}/${TEST_NAME}"_actual.json;
-  else
-    "${SCRIPT_ROOT_DIR}/edy" q -t User -p "${PARTITION_VALUE}" -s "${SORT_CONDITION}" --local 8000 > "${CASE_DIR}/${TEST_NAME}"_actual.json;
-  fi
+  "${SCRIPT_ROOT_DIR}/edy" s -t User -f "${FILTER_CONDITION}" --local 8000 > "${CASE_DIR}/${TEST_NAME}"_actual.json;
 
   if ! diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json "${EXPECTED_FILE}" > tmp.diff;
   then

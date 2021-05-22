@@ -145,14 +145,23 @@ OPTIONS:
 
 ### put
 
-The `put` command behaves similarly to `aws dynamodb put-item`. It creates a record by passing json to the `--item(-i)` option.  
+The `put` command behaves similarly to `aws dynamodb put-item` or `aws dynamodb batch-write-item` (only PutRequest).
+It creates a record by passing json to the `--item(-i)` option.  
 Supported type is `S`, `N`, `SS`, `NS`, `M`, `L`, `BOOL`, `NULL`.
 
 ```console
+# When put 1 item.
 $ edy put --table-name User --item '{"ID":3, "Name":"Alice", "Interest":{"SNS":["Twitter","Facebook"]}}'
 # Shortened version: edy p -i '{"ID":3, "Name":"Alice", "Interest":{"SNS":["Twitter","Facebook"]}}'
 {
-  "unprocessed": 0
+  "unprocessed": []
+}
+
+# When put some items, specify the items in an array.
+$ edy put --table-name User --item '[{"ID":3, "Name":"Alice", "Interest":{"SNS":["Twitter","Facebook"]}}, {"ID":4, "Name":"Bob", "Interest":{"SNS":["Facebook"]}}]'
+# Shortened version: edy p -i '{"ID":3, "Name":"Alice", "Interest":{"SNS":["Twitter","Facebook"]}}'
+{
+  "unprocessed": []
 }
 ```
 

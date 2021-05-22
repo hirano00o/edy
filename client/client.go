@@ -24,6 +24,11 @@ type DynamoDB interface {
 		params *dynamodb.PutItemInput,
 		optFns ...func(*dynamodb.Options),
 	) (*dynamodb.PutItemOutput, error)
+	BatchWriteItem(
+		ctx context.Context,
+		params *dynamodb.BatchWriteItemInput,
+		optFns ...func(*dynamodb.Options),
+	) (*dynamodb.BatchWriteItemOutput, error)
 }
 
 type NewClient interface {
