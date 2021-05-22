@@ -38,12 +38,7 @@ run_such_put_helper() {
     exit 1
   fi
 
-  if [ -z "${SORT_CONDITION}" ];
-  then
-    "${SCRIPT_ROOT_DIR}/edy" q -t User -p "${PARTITION_VALUE}" --local 8000 > "${CASE_DIR}/${TEST_NAME}"_actual.json;
-  else
-    "${SCRIPT_ROOT_DIR}/edy" q -t User -p "${PARTITION_VALUE}" -s "${SORT_CONDITION}" --local 8000 > "${CASE_DIR}/${TEST_NAME}"_actual.json;
-  fi
+  "${SCRIPT_ROOT_DIR}/edy" s -t User -f "${FILTER_CONDITION}" --local 8000 > "${CASE_DIR}/${TEST_NAME}"_actual.json;
 
   if ! diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json "${EXPECTED_FILE}" > tmp.diff;
   then

@@ -10,6 +10,6 @@ CMD="edy p -t User -i '{\"ID\":11, \"Name\":\"Isaac\", \"Email\":\"isaac@example
 
 . "${SCRIPT_ROOT_DIR}"/helper.sh
 
-PARTITION_VALUE=11
+FILTER_CONDITION="ID,N = 11"
 
 run_such_put_helper
