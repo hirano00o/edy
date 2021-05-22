@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -51,10 +52,10 @@ func TestInstance_Put(t *testing.T) {
 
 				return m
 			},
-			wantW: "{\n  \"unprocessed\": 0\n}\n",
+			wantW: "{\n  \"unprocessed\": []\n}\n",
 		},
 		{
-			name: "Put 2 items",
+			name: "Put 2 data",
 			args: args{
 				ctx:       context.Background(),
 				tableName: "TEST",
@@ -81,10 +82,10 @@ func TestInstance_Put(t *testing.T) {
 
 				return m
 			},
-			wantW: "{\n  \"unprocessed\": 0\n}\n",
+			wantW: "{\n  \"unprocessed\": []\n}\n",
 		},
 		{
-			name: "Put items with map",
+			name: "Put data with map",
 			args: args{
 				ctx:       context.Background(),
 				tableName: "TEST",
@@ -134,10 +135,10 @@ func TestInstance_Put(t *testing.T) {
 
 				return m
 			},
-			wantW: "{\n  \"unprocessed\": 0\n}\n",
+			wantW: "{\n  \"unprocessed\": []\n}\n",
 		},
 		{
-			name: "Put items with list",
+			name: "Put data with list",
 			args: args{
 				ctx:       context.Background(),
 				tableName: "TEST",
@@ -171,10 +172,10 @@ func TestInstance_Put(t *testing.T) {
 
 				return m
 			},
-			wantW: "{\n  \"unprocessed\": 0\n}\n",
+			wantW: "{\n  \"unprocessed\": []\n}\n",
 		},
 		{
-			name: "Put items with null",
+			name: "Put data with null",
 			args: args{
 				ctx:       context.Background(),
 				tableName: "TEST",
@@ -198,7 +199,192 @@ func TestInstance_Put(t *testing.T) {
 
 				return m
 			},
-			wantW: "{\n  \"unprocessed\": 0\n}\n",
+			wantW: "{\n  \"unprocessed\": []\n}\n",
+		},
+		{
+			name: "Put 1 item with array",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				item:      "[{\"TEST_KEY1\":\"TEST_VALUE1\"}]",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				input := &dynamodb.BatchWriteItemInput{
+					RequestItems: map[string][]types.WriteRequest{
+						"TEST": {
+							{
+								PutRequest: &types.PutRequest{
+									Item: map[string]types.AttributeValue{
+										"TEST_KEY1": &types.AttributeValueMemberS{
+											Value: "TEST_VALUE1",
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				m.BatchWriteItemClient.On("BatchWriteItem", ctx, input).Return(&dynamodb.BatchWriteItemOutput{
+					UnprocessedItems: map[string][]types.WriteRequest{},
+				}, nil)
+
+				return m
+			},
+			wantW: "{\n  \"unprocessed\": []\n}\n",
+		},
+		{
+			name: "Put 2 items",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				item: "[{\"TEST_KEY1\":\"TEST_VALUE1\"}," +
+					"{\"TEST_KEY2\":\"TEST_VALUE2\", \"TEST_KEY3\":[\"TEST_VALUE31\",32,true]}]",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				input := &dynamodb.BatchWriteItemInput{
+					RequestItems: map[string][]types.WriteRequest{
+						"TEST": {
+							{
+								PutRequest: &types.PutRequest{
+									Item: map[string]types.AttributeValue{
+										"TEST_KEY1": &types.AttributeValueMemberS{
+											Value: "TEST_VALUE1",
+										},
+									},
+								},
+							},
+							{
+								PutRequest: &types.PutRequest{
+									Item: map[string]types.AttributeValue{
+										"TEST_KEY2": &types.AttributeValueMemberS{
+											Value: "TEST_VALUE2",
+										},
+										"TEST_KEY3": &types.AttributeValueMemberL{
+											Value: []types.AttributeValue{
+												&types.AttributeValueMemberS{
+													Value: "TEST_VALUE31",
+												},
+												&types.AttributeValueMemberN{
+													Value: "32",
+												},
+												&types.AttributeValueMemberBOOL{
+													Value: true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				m.BatchWriteItemClient.On("BatchWriteItem", ctx, input).Return(&dynamodb.BatchWriteItemOutput{
+					UnprocessedItems: map[string][]types.WriteRequest{},
+				}, nil)
+
+				return m
+			},
+			wantW: "{\n  \"unprocessed\": []\n}\n",
+		},
+		{
+			name: "Put item with 1 retry",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				item:      "[{\"TEST_KEY1\":\"TEST_VALUE1\"}]",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				reqItems := map[string][]types.WriteRequest{
+					"TEST": {
+						{
+							PutRequest: &types.PutRequest{
+								Item: map[string]types.AttributeValue{
+									"TEST_KEY1": &types.AttributeValueMemberS{
+										Value: "TEST_VALUE1",
+									},
+								},
+							},
+						},
+					},
+				}
+				input := &dynamodb.BatchWriteItemInput{
+					RequestItems: reqItems,
+				}
+				m.BatchWriteItemClient.On("BatchWriteItem", ctx, input).Return(&dynamodb.BatchWriteItemOutput{
+					UnprocessedItems: reqItems,
+				}, nil).Once()
+				m.BatchWriteItemClient.On("BatchWriteItem", ctx, input).Return(&dynamodb.BatchWriteItemOutput{
+					UnprocessedItems: map[string][]types.WriteRequest{},
+				}, nil)
+
+				return m
+			},
+			wantW: "{\n  \"unprocessed\": []\n}\n",
+		},
+		{
+			name: "Put item, failed retry",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				item:      "[{\"TEST_KEY1\":\"TEST_VALUE1\"}]",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				reqItems := map[string][]types.WriteRequest{
+					"TEST": {
+						{
+							PutRequest: &types.PutRequest{
+								Item: map[string]types.AttributeValue{
+									"TEST_KEY1": &types.AttributeValueMemberS{
+										Value: "TEST_VALUE1",
+									},
+								},
+							},
+						},
+					},
+				}
+				input := &dynamodb.BatchWriteItemInput{
+					RequestItems: reqItems,
+				}
+				m.BatchWriteItemClient.On("BatchWriteItem", ctx, input).Return(&dynamodb.BatchWriteItemOutput{
+					UnprocessedItems: reqItems,
+				}, nil)
+
+				return m
+			},
+			wantW: "{\n" +
+				strings.Repeat(" ", 2) + "\"unprocessed\": [\n" +
+				strings.Repeat(" ", 4) + "{\n" +
+				strings.Repeat(" ", 6) + "\"DeleteRequest\": null,\n" +
+				strings.Repeat(" ", 6) + "\"PutRequest\": {\n" +
+				strings.Repeat(" ", 8) + "\"Item\": {\n" +
+				strings.Repeat(" ", 10) + "\"TEST_KEY1\": {\n" +
+				strings.Repeat(" ", 12) + "\"Value\": \"TEST_VALUE1\"\n" +
+				strings.Repeat(" ", 10) + "}\n" +
+				strings.Repeat(" ", 8) + "}\n" +
+				strings.Repeat(" ", 6) + "}\n" +
+				strings.Repeat(" ", 4) + "}\n" +
+				strings.Repeat(" ", 2) + "]\n" +
+				"}\n",
 		},
 		{
 			name: "Error unmarshal JSON",
@@ -218,7 +404,7 @@ func TestInstance_Put(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Error put items",
+			name: "Error put item",
 			args: args{
 				ctx:       context.Background(),
 				tableName: "TEST",
@@ -239,6 +425,40 @@ func TestInstance_Put(t *testing.T) {
 					},
 				}
 				m.PutItemClient.On("PutItem", ctx, input).Return(nil, fmt.Errorf("cannot put items"))
+
+				return m
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error batch write item",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				item:      "[{\"ERROR\":\"ERROR\"}]",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				input := &dynamodb.BatchWriteItemInput{
+					RequestItems: map[string][]types.WriteRequest{
+						"TEST": {
+							{
+								PutRequest: &types.PutRequest{
+									Item: map[string]types.AttributeValue{
+										"ERROR": &types.AttributeValueMemberS{
+											Value: "ERROR",
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				m.BatchWriteItemClient.On("BatchWriteItem", ctx, input).Return(nil, fmt.Errorf("cannot batch write items"))
 
 				return m
 			},

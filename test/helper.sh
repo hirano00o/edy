@@ -30,7 +30,7 @@ run_such_put_helper() {
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME} failed to execute ${CMD}"
     exit 1
   fi
-  if ! printf "{\n  \"unprocessed\": 0\n}\n" | diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json - > tmp.diff;
+  if ! printf "{\n  \"unprocessed\": []\n}\n" | diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json - > tmp.diff;
   then
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME}"
     sed -e "s@${CASE_DIR}/${TEST_NAME}_actual.json@actual@" -e "s@+++ -@+++ expected@" tmp.diff

@@ -12,6 +12,7 @@ type MockDynamoDBAPI struct {
 	QueryAPIClient
 	ScanAPIClient
 	PutItemClient
+	BatchWriteItemClient
 }
 
 func (_m *MockDynamoDBAPI) CreateInstance() client.DynamoDB {

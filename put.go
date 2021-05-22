@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
 	"github.com/hirano00o/edy/client"
+	"github.com/hirano00o/edy/model"
 )
 
 const (
@@ -207,34 +208,30 @@ func put(ctx context.Context, tableName, item string) (map[string]interface{}, e
 		}
 	} else {
 		var res *dynamodb.BatchWriteItemOutput
-		retryMax := 3
+		var unprocessedCount int
 		input := &dynamodb.BatchWriteItemInput{
 			RequestItems: map[string][]types.WriteRequest{
 				tableName: i.([]types.WriteRequest),
 			},
 		}
-		for {
+		for i := 0; i < 1+model.RetryMax; i++ {
 			res, err = cli.BatchWriteItem(ctx, input)
 			if err != nil {
 				return nil, err
 			}
-			unprocessedCount := len(res.UnprocessedItems[tableName])
+			unprocessedCount = len(res.UnprocessedItems[tableName])
 			if unprocessedCount == 0 {
-				return map[string]interface{}{"unprocessed": 0}, nil
-			}
-			retryMax--
-			if retryMax < 0 && unprocessedCount == 0 {
 				break
-			} else if retryMax < 0 && unprocessedCount > 0 {
-				return map[string]interface{}{
-					"unprocessed": unprocessedCount,
-					"items":       res.UnprocessedItems[tableName],
-				}, nil
 			}
 			input.RequestItems = res.UnprocessedItems
 		}
+		if unprocessedCount > 0 {
+			return map[string]interface{}{
+				"unprocessed": res.UnprocessedItems[tableName],
+			}, nil
+		}
 	}
-	return map[string]interface{}{"unprocessed": 0}, nil
+	return map[string]interface{}{"unprocessed": []string{}}, nil
 }
 
 func (i *Instance) Put(ctx context.Context, w io.Writer, tableName, item string) error {
