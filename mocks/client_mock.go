@@ -12,6 +12,7 @@ type MockDynamoDBAPI struct {
 	QueryAPIClient
 	ScanAPIClient
 	PutItemClient
+	DeleteItemClient
 	BatchWriteItemClient
 }
 

@@ -9,7 +9,7 @@ edy is a command line interface designed to make DynamoDB easy to use.
 When you query or scan on DynamoDB with AWS CLI, you have to write a lot of keys and values and options.
 If you run it many times, it's very hard. Also, the results are deeply nested and difficult to read.
 We are developing `edy` to make the results easier to handle and in order to reduce writing.
-Currently, `scan`, `query` (and `describe-table`) are available. Options support filter and projection, GSI.
+Currently, `scan`, `query` (and `describe-table`), `put`, `delete` are available. Options support filter and projection, GSI.
 Other commands and options are under development.
 
 # Installation
@@ -49,14 +49,14 @@ Please see [Configuration and credential file settings - AWS Command Line Interf
 
 ## Overview
 
-Currently, available commands are `describe`, `scan`, `query`, `put`.
+Currently, available commands are `describe`, `scan`, `query`, `put`, `delete`.
 
 ### describe
 
 The `describe` command behaves similarly to `aws dynamodb describe-table`.
 
 ```console
-$ edy describe --table-name User  # Shortened version: edy d -t User
+$ edy describe --table-name User  # Shortened version: edy desc -t User
 {
   "tableArn": "arn:aws:dynamodb:ddblocal:000000000000:table/User",
   "tableName": "User",
@@ -160,6 +160,17 @@ $ edy put --table-name User --item '{"ID":3, "Name":"Alice", "Interest":{"SNS":[
 # When put some items, specify the items in an array.
 $ edy put --table-name User --item '[{"ID":3, "Name":"Alice", "Interest":{"SNS":["Twitter","Facebook"]}}, {"ID":4, "Name":"Bob", "Interest":{"SNS":["Facebook"]}}]'
 # Shortened version: edy p -i '{"ID":3, "Name":"Alice", "Interest":{"SNS":["Twitter","Facebook"]}}'
+{
+  "unprocessed": []
+}
+```
+
+### delete
+
+The `delete` command behaves similarly to `aws dynamodb delete-item`.
+
+```console
+$ edy delete --table-name User --partition 1 --sort "Alice" # Shortened version: edy del -t User -p 1 -s Alice
 {
   "unprocessed": []
 }

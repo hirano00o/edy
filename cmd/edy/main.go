@@ -12,6 +12,89 @@ import (
 	"github.com/hirano00o/edy/meta"
 )
 
+var baseOptions = []cli.Flag{
+	&cli.StringFlag{
+		Name:     "table-name",
+		Usage:    "DynamoDB table name.",
+		Aliases:  []string{"t"},
+		Required: true,
+	},
+	&cli.StringFlag{
+		Name:    "region",
+		Usage:   "AWS region.",
+		Aliases: []string{"r"},
+	},
+	&cli.StringFlag{
+		Name:  "profile",
+		Usage: "AWS profile name.",
+	},
+	&cli.StringFlag{
+		Name: "local",
+		Usage: "Port number or full URL if you connect such as dynamodb-local and LocalStack.\n" +
+			"\tex. --local 8000",
+	},
+}
+
+var queryOptions = []cli.Flag{
+	&cli.StringFlag{
+		Name:     "partition",
+		Usage:    "The value of partition key.",
+		Aliases:  []string{"p"},
+		Required: true,
+	},
+	&cli.StringFlag{
+		Name: "sort",
+		Usage: "The value and condition of sort key.\n" +
+			"\tex1. --sort \"> 20\"\n" +
+			"\tex2. --sort \"between 20 25\"\n" +
+			"\tAvailable operator is =,<=,<,>=,>,between,begins_with",
+		Aliases: []string{"s"},
+	},
+	&cli.StringFlag{
+		Name:    "index",
+		Usage:   "Global secondary index name.",
+		Aliases: []string{"idx"},
+	},
+}
+
+var scanQueryOptions = []cli.Flag{
+	&cli.StringFlag{
+		Name: "filter",
+		Usage: "The condition if you use filter.\n" +
+			"\tex. --filter \"Age,N >= 20 and Email,S in alice@example.com bob@example.com or not Birthplace,S exists\"\n" +
+			"\tAvailable operator is =,<=,<,>=,>,between,begins_with,exists,in,contains",
+		Aliases: []string{"f"},
+	},
+	&cli.StringFlag{
+		Name:    "projection",
+		Usage:   "Identifies and retrieve the attributes that you want.",
+		Aliases: []string{"pj"},
+	},
+}
+
+var putOptions = []cli.Flag{
+	&cli.StringFlag{
+		Name: "item",
+		Usage: "Specify the item you want to create.\n" +
+			"\tex. --item '{\"ID\":3,\"Name\":\"Alice\",\"Interest\":{\"SNS\":[\"Twitter\",\"Facebook\"]}}'",
+		Aliases: []string{"i"},
+	},
+}
+
+var deleteOptions = []cli.Flag{
+	&cli.StringFlag{
+		Name:     "partition",
+		Usage:    "The value of partition key.",
+		Aliases:  []string{"p"},
+		Required: true,
+	},
+	&cli.StringFlag{
+		Name:    "sort",
+		Usage:   "The value and sort key.",
+		Aliases: []string{"s"},
+	},
+}
+
 func main() {
 	if err := run(os.Stdout, os.Args); err != nil {
 		log.SetFlags(0)
@@ -21,71 +104,6 @@ func main() {
 }
 
 func run(w io.Writer, args []string) error {
-	baseOptions := []cli.Flag{
-		&cli.StringFlag{
-			Name:     "table-name",
-			Usage:    "DynamoDB table name",
-			Aliases:  []string{"t"},
-			Required: true,
-		},
-		&cli.StringFlag{
-			Name:    "region",
-			Usage:   "AWS region",
-			Aliases: []string{"r"},
-		},
-		&cli.StringFlag{
-			Name:  "profile",
-			Usage: "AWS profile name",
-		},
-		&cli.StringFlag{
-			Name: "local",
-			Usage: "Port number or full URL if you connect such as dynamodb-local and LocalStack.\n" +
-				"\tex. --local 8000",
-		},
-	}
-	queryOptions := []cli.Flag{
-		&cli.StringFlag{
-			Name:     "partition",
-			Usage:    "The value of partition key",
-			Aliases:  []string{"p"},
-			Required: true,
-		},
-		&cli.StringFlag{
-			Name: "sort",
-			Usage: "The value and condition of sort key.\n" +
-				"\tex1. --sort \"> 20\"\n" +
-				"\tex2. --sort \"between 20 25\"\n" +
-				"\tAvailable operator is =,<=,<,>=,>,between,begins_with",
-			Aliases: []string{"s"},
-		},
-		&cli.StringFlag{
-			Name:    "index",
-			Usage:   "Global secondary index name",
-			Aliases: []string{"idx"},
-		},
-	}
-	scanQueryOptions := []cli.Flag{
-		&cli.StringFlag{
-			Name: "filter",
-			Usage: "The condition if you use filter.\n" +
-				"\tex. --filter \"Age,N >= 20 and Email,S in alice@example.com bob@example.com or not Birthplace,S exists\"\n" +
-				"\tAvailable operator is =,<=,<,>=,>,between,begins_with,exists,in,contains",
-			Aliases: []string{"f"},
-		},
-		&cli.StringFlag{
-			Name:    "projection",
-			Usage:   "Identifies and retrieve the attributes that you want.",
-			Aliases: []string{"pj"},
-		},
-	}
-	putOptions := []cli.Flag{
-		&cli.StringFlag{
-			Name: "item",
-			Usage: "Specify the item you want to create.\n" +
-				"\tex. --item '{\"ID\":3,\"Name\":\"Alice\",\"Interest\":{\"SNS\":[\"Twitter\",\"Facebook\"]}}'",
-			Aliases: []string{"i"},
-		},
-	}
 	app := &cli.App{
 		Name:    meta.CliName,
 		Version: meta.Version,
@@ -94,7 +112,7 @@ func run(w io.Writer, args []string) error {
 			{
 				Name:    "describe",
 				Usage:   "Describe table",
-				Aliases: []string{"d"},
+				Aliases: []string{"desc"},
 				Flags:   baseOptions,
 				Action:  cmd(w),
 			},
@@ -117,6 +135,13 @@ func run(w io.Writer, args []string) error {
 				Usage:   "Put item",
 				Aliases: []string{"p"},
 				Flags:   append(baseOptions, putOptions...),
+				Action:  cmd(w),
+			},
+			{
+				Name:    "delete",
+				Usage:   "Delete item",
+				Aliases: []string{"del"},
+				Flags:   baseOptions,
 				Action:  cmd(w),
 			},
 		},
@@ -158,6 +183,14 @@ func cmd(w io.Writer) cli.ActionFunc {
 				w,
 				ctx.String("table-name"),
 				ctx.String("item"),
+			)
+		case "delete":
+			return newEdyClient(c).Delete(
+				ctx.Context,
+				w,
+				ctx.String("table-name"),
+				ctx.String("partition"),
+				ctx.String("sort"),
 			)
 		default:
 			return nil

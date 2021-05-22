@@ -25,6 +25,7 @@ type Edy interface {
 	) error
 	DescribeTable(ctx context.Context, w io.Writer, tableName string) error
 	Put(ctx context.Context, w io.Writer, tableName, item string) error
+	Delete(ctx context.Context, w io.Writer, tableName, partitionValue, sortValue string) error
 }
 
 type Instance struct {

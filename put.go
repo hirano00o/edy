@@ -189,7 +189,7 @@ func analyseItem(item string) (interface{}, error) {
 	return recursiveAnalyseJSON(jsonItem)
 }
 
-func put(ctx context.Context, tableName, item string) (map[string]interface{}, error) {
+func putItems(ctx context.Context, tableName, item string) (map[string]interface{}, error) {
 	cli := ctx.Value(newClientKey).(client.DynamoDB)
 
 	i, err := analyseItem(item)
@@ -238,7 +238,7 @@ func (i *Instance) Put(ctx context.Context, w io.Writer, tableName, item string)
 	cli := i.NewClient.CreateInstance()
 	ctx = context.WithValue(ctx, newClientKey, cli)
 
-	res, err := put(ctx, tableName, item)
+	res, err := putItems(ctx, tableName, item)
 	if err != nil {
 		return err
 	}
