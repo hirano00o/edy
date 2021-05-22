@@ -141,7 +141,7 @@ func run(w io.Writer, args []string) error {
 				Name:    "delete",
 				Usage:   "Delete item",
 				Aliases: []string{"del"},
-				Flags:   baseOptions,
+				Flags:   append(baseOptions, deleteOptions...),
 				Action:  cmd(w),
 			},
 		},
