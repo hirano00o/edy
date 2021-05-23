@@ -21,7 +21,6 @@ import (
 const (
 	NONE = iota
 	STRING
-	INT
 	FLOAT64
 	BOOL
 	NULL
@@ -36,12 +35,6 @@ func listType(items []interface{}) int {
 			if typ == NONE {
 				typ = STRING
 			} else if typ != STRING {
-				return LIST
-			}
-		case int:
-			if typ == NONE {
-				typ = INT
-			} else if typ != INT {
 				return LIST
 			}
 		case float64:
@@ -81,10 +74,6 @@ func setAttrEachType(item interface{}) (types.AttributeValue, error) {
 		return &types.AttributeValueMemberS{
 			Value: t,
 		}, nil
-	case int:
-		return &types.AttributeValueMemberN{
-			Value: strconv.Itoa(t),
-		}, nil
 	case float64:
 		return &types.AttributeValueMemberN{
 			Value: strconv.FormatFloat(t, 'f', -1, 64),
@@ -118,14 +107,6 @@ func setAttrEachType(item interface{}) (types.AttributeValue, error) {
 				ss[i] = t[i].(string)
 			}
 			return &types.AttributeValueMemberSS{
-				Value: ss,
-			}, nil
-		case INT:
-			ss := make([]string, len(t))
-			for i := range t {
-				ss[i] = strconv.Itoa(t[i].(int))
-			}
-			return &types.AttributeValueMemberNS{
 				Value: ss,
 			}, nil
 		case FLOAT64:

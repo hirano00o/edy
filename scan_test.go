@@ -165,6 +165,26 @@ func TestInstance_Scan(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "Error DescribeTable",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				m.DescribeTableAPIClient.On("DescribeTable", ctx, &dynamodb.DescribeTableInput{
+					TableName: aws.String("TEST"),
+				}).Return(nil, fmt.Errorf("cannot describe table"))
+
+				return m
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
