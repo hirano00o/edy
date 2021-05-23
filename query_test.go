@@ -476,6 +476,90 @@ func TestInstance_Query(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "Invalid partition value",
+			args: args{
+				ctx:            context.Background(),
+				tableName:      "TEST",
+				partitionValue: "ERROR",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				table := &dynamodb.DescribeTableOutput{
+					Table: &types.TableDescription{
+						TableName: aws.String("TEST"),
+						AttributeDefinitions: []types.AttributeDefinition{
+							{
+								AttributeName: aws.String("TEST_PARTITION_ATTRIBUTE"),
+								AttributeType: types.ScalarAttributeTypeN,
+							},
+						},
+						KeySchema: []types.KeySchemaElement{
+							{
+								AttributeName: aws.String("TEST_PARTITION_ATTRIBUTE"),
+								KeyType:       types.KeyTypeHash,
+							},
+						},
+					},
+				}
+				m.DescribeTableAPIClient.On("DescribeTable", ctx, &dynamodb.DescribeTableInput{
+					TableName: aws.String("TEST"),
+				}).Return(table, nil)
+
+				return m
+			},
+			wantErr: true,
+		},
+		{
+			name: "Invalid sort condition",
+			args: args{
+				ctx:            context.Background(),
+				tableName:      "TEST",
+				partitionValue: "TEST_PARTITION_VALUE_1",
+				sortCondition:  "ERROR",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				table := describeTableOutputFixture(t, false)
+				m.DescribeTableAPIClient.On("DescribeTable", ctx, &dynamodb.DescribeTableInput{
+					TableName: aws.String("TEST"),
+				}).Return(table, nil)
+
+				return m
+			},
+			wantErr: true,
+		},
+		{
+			name: "Invalid filter condition",
+			args: args{
+				ctx:             context.Background(),
+				tableName:       "TEST",
+				partitionValue:  "TEST_PARTITION_VALUE_1",
+				filterCondition: "ERROR = ERROR",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				table := describeTableOutputFixture(t, false)
+				m.DescribeTableAPIClient.On("DescribeTable", ctx, &dynamodb.DescribeTableInput{
+					TableName: aws.String("TEST"),
+				}).Return(table, nil)
+
+				return m
+			},
+			wantErr: true,
+		},
+		{
 			name: "Error DescribeTable",
 			args: args{
 				ctx:            context.Background(),
