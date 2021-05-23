@@ -69,11 +69,6 @@ func analyseFilterCondition(
 			}
 		case value:
 			switch {
-			case op == model.ComparisonOperator(0):
-				return nil, fmt.Errorf("unknown condition error: %s", condition)
-			case op == model.EXISTS:
-				i--
-				nextState = join
 			case op == model.BETWEEN:
 				if len(conditionValue) < 2 {
 					conditionValue = append(conditionValue, s[i])
