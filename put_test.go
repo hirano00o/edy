@@ -175,6 +175,40 @@ func TestInstance_Put(t *testing.T) {
 			wantW: "{\n  \"unprocessed\": []\n}\n",
 		},
 		{
+			name: "Put data with list include null",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				item:      "{\"TEST_KEY1\":[null, \"T1\"]}",
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				input := &dynamodb.PutItemInput{
+					TableName: aws.String("TEST"),
+					Item: map[string]types.AttributeValue{
+						"TEST_KEY1": &types.AttributeValueMemberL{
+							Value: []types.AttributeValue{
+								&types.AttributeValueMemberNULL{
+									Value: true,
+								},
+								&types.AttributeValueMemberS{
+									Value: "T1",
+								},
+							},
+						},
+					},
+				}
+				m.PutItemClient.On("PutItem", ctx, input).Return(&dynamodb.PutItemOutput{}, nil)
+
+				return m
+			},
+			wantW: "{\n  \"unprocessed\": []\n}\n",
+		},
+		{
 			name: "Put data with null",
 			args: args{
 				ctx:       context.Background(),
