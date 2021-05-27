@@ -137,24 +137,40 @@ func recursiveAnalyseJSON(items map[string]interface{}) (map[string]types.Attrib
 	return m, nil
 }
 
-func analyseItem(item string) (interface{}, error) {
+func parseJSON(item string) (interface{}, error) {
 	var jsonItem map[string]interface{}
 	var jsonItems []map[string]interface{}
 	var err error
+
 	if strings.HasPrefix(item, "[") {
 		err = json.Unmarshal(bytes.NewBufferString(item).Bytes(), &jsonItems)
-	} else {
-		err = json.Unmarshal(bytes.NewBufferString(item).Bytes(), &jsonItem)
+		if err != nil {
+			return nil, fmt.Errorf("invalid json format: %v", err)
+		}
+		return jsonItems, nil
 	}
+
+	err = json.Unmarshal(bytes.NewBufferString(item).Bytes(), &jsonItem)
 	if err != nil {
 		return nil, fmt.Errorf("invalid json format: %v", err)
 	}
+	return jsonItem, nil
+}
 
-	if jsonItems != nil {
-		putItems := make([]types.WriteRequest, len(jsonItems))
+func analyseItem(item string) (interface{}, error) {
+	var jsonItem interface{}
+	var err error
+	jsonItem, err = parseJSON(item)
+	if err != nil {
+		return nil, err
+	}
+
+	switch j := jsonItem.(type) {
+	case []map[string]interface{}:
+		putItems := make([]types.WriteRequest, len(j))
 		var res map[string]types.AttributeValue
-		for i := range jsonItems {
-			res, err = recursiveAnalyseJSON(jsonItems[i])
+		for i := range j {
+			res, err = recursiveAnalyseJSON(j[i])
 			if err != nil {
 				return nil, err
 			}
@@ -165,9 +181,11 @@ func analyseItem(item string) (interface{}, error) {
 			}
 		}
 		return putItems, nil
+	case map[string]interface{}:
+		return recursiveAnalyseJSON(j)
+	default:
+		return nil, fmt.Errorf("unknown error: %v", item)
 	}
-
-	return recursiveAnalyseJSON(jsonItem)
 }
 
 func putItems(ctx context.Context, tableName string, requestItem interface{}) (map[string]interface{}, error) {
