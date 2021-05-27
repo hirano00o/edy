@@ -170,29 +170,25 @@ func analyseItem(item string) (interface{}, error) {
 	return recursiveAnalyseJSON(jsonItem)
 }
 
-func putItems(ctx context.Context, tableName, item string) (map[string]interface{}, error) {
+func putItems(ctx context.Context, tableName string, requestItem interface{}) (map[string]interface{}, error) {
 	cli := ctx.Value(newClientKey).(client.DynamoDB)
 
-	i, err := analyseItem(item)
-	if err != nil {
-		return nil, err
-	}
-
-	if reflect.TypeOf(i).Kind() == reflect.Map {
+	if reflect.TypeOf(requestItem).Kind() == reflect.Map {
 		input := &dynamodb.PutItemInput{
 			TableName: aws.String(tableName),
-			Item:      i.(map[string]types.AttributeValue),
+			Item:      requestItem.(map[string]types.AttributeValue),
 		}
-		_, err = cli.PutItem(ctx, input)
+		_, err := cli.PutItem(ctx, input)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		var res *dynamodb.BatchWriteItemOutput
+		var err error
 		var unprocessedCount int
 		input := &dynamodb.BatchWriteItemInput{
 			RequestItems: map[string][]types.WriteRequest{
-				tableName: i.([]types.WriteRequest),
+				tableName: requestItem.([]types.WriteRequest),
 			},
 		}
 		for i := 0; i < 1+model.RetryMax; i++ {
@@ -215,11 +211,16 @@ func putItems(ctx context.Context, tableName, item string) (map[string]interface
 	return map[string]interface{}{"unprocessed": []string{}}, nil
 }
 
-func (i *Instance) Put(ctx context.Context, w io.Writer, tableName, item string) error {
+func (i *Instance) Put(ctx context.Context, w io.Writer, tableName, item, fileName string) error {
+	requestItem, err := analyseItem(item)
+	if err != nil {
+		return err
+	}
+
 	cli := i.NewClient.CreateInstance()
 	ctx = context.WithValue(ctx, newClientKey, cli)
 
-	res, err := putItems(ctx, tableName, item)
+	res, err := putItems(ctx, tableName, requestItem)
 	if err != nil {
 		return err
 	}

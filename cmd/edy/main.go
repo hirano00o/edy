@@ -79,6 +79,12 @@ var putOptions = []cli.Flag{
 			"\tex. --item '{\"ID\":3,\"Name\":\"Alice\",\"Interest\":{\"SNS\":[\"Twitter\",\"Facebook\"]}}'",
 		Aliases: []string{"i"},
 	},
+	&cli.StringFlag{
+		Name: "input-file",
+		Usage: "Read item to put from json file.\n" +
+			"Use either the --item option or this option.",
+		Aliases: []string{"I"},
+	},
 }
 
 var deleteOptions = []cli.Flag{
@@ -183,6 +189,7 @@ func cmd(w io.Writer) cli.ActionFunc {
 				w,
 				ctx.String("table-name"),
 				ctx.String("item"),
+				ctx.String("input-file"),
 			)
 		case "delete":
 			return newEdyClient(c).Delete(

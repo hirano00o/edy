@@ -431,7 +431,6 @@ func TestInstance_Put(t *testing.T) {
 				t.Helper()
 
 				m := new(mocks.MockDynamoDBAPI)
-				m.On("CreateInstance").Return(m)
 
 				return m
 			},
@@ -506,7 +505,7 @@ func TestInstance_Put(t *testing.T) {
 				NewClient: mock,
 			}
 			w := &bytes.Buffer{}
-			err := i.Put(tt.args.ctx, w, tt.args.tableName, tt.args.item)
+			err := i.Put(tt.args.ctx, w, tt.args.tableName, tt.args.item, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Put() error = %v, wantErr %v", err, tt.wantErr)
 				return
