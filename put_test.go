@@ -19,6 +19,8 @@ func TestInstance_Put(t *testing.T) {
 		ctx       context.Context
 		tableName string
 		item      string
+		fileName  string
+		f         func(string) (string, error)
 	}
 	tests := []struct {
 		name    string
@@ -505,7 +507,7 @@ func TestInstance_Put(t *testing.T) {
 				NewClient: mock,
 			}
 			w := &bytes.Buffer{}
-			err := i.Put(tt.args.ctx, w, tt.args.tableName, tt.args.item, "")
+			err := i.Put(tt.args.ctx, w, tt.args.tableName, tt.args.item, tt.args.fileName, tt.args.f)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Put() error = %v, wantErr %v", err, tt.wantErr)
 				return

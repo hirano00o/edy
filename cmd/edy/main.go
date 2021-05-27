@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -190,6 +191,13 @@ func cmd(w io.Writer) cli.ActionFunc {
 				ctx.String("table-name"),
 				ctx.String("item"),
 				ctx.String("input-file"),
+				func(fileName string) (string, error) {
+					b, err := ioutil.ReadFile(fileName)
+					if err != nil {
+						return "", nil
+					}
+					return string(b), nil
+				},
 			)
 		case "delete":
 			return newEdyClient(c).Delete(

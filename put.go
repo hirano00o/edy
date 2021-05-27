@@ -229,7 +229,26 @@ func putItems(ctx context.Context, tableName string, requestItem interface{}) (m
 	return map[string]interface{}{"unprocessed": []string{}}, nil
 }
 
-func (i *Instance) Put(ctx context.Context, w io.Writer, tableName, item, fileName string) error {
+func (i *Instance) Put(
+	ctx context.Context,
+	w io.Writer,
+	tableName,
+	item,
+	fileName string,
+	f func(string) (string, error),
+) error {
+	switch {
+	case len(item) == 0 && len(fileName) == 0:
+		return fmt.Errorf("required either --item or --input-file option")
+	case len(item) != 0 && len(fileName) != 0:
+		return fmt.Errorf("use either --item or --input-file option")
+	case len(fileName) != 0:
+		var err error
+		item, err = f(fileName)
+		if err != nil {
+			return err
+		}
+	}
 	requestItem, err := analyseItem(item)
 	if err != nil {
 		return err
