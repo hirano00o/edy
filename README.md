@@ -146,7 +146,7 @@ OPTIONS:
 ### put
 
 The `put` command behaves similarly to `aws dynamodb put-item` or `aws dynamodb batch-write-item` (only PutRequest).
-It creates a record by passing json to the `--item(-i)` option.  
+It creates a record by passing json to the `--item(-i)` option or using `--input-file` from file.  
 Supported type is `S`, `N`, `SS`, `NS`, `M`, `L`, `BOOL`, `NULL`.
 
 ```console

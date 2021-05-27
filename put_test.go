@@ -423,6 +423,88 @@ func TestInstance_Put(t *testing.T) {
 				"}\n",
 		},
 		{
+			name: "Put item from file",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				fileName:  "TEST.json",
+				f: func(s string) (string, error) {
+					return "{\"TEST_KEY1\":\"TEST_VALUE1\"}", nil
+				},
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				input := &dynamodb.PutItemInput{
+					TableName: aws.String("TEST"),
+					Item: map[string]types.AttributeValue{
+						"TEST_KEY1": &types.AttributeValueMemberS{
+							Value: "TEST_VALUE1",
+						},
+					},
+				}
+				m.PutItemClient.On("PutItem", ctx, input).Return(&dynamodb.PutItemOutput{}, nil)
+
+				return m
+			},
+			wantW: "{\n  \"unprocessed\": []\n}\n",
+		},
+		{
+			name: "Put items from file",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				fileName:  "TEST.json",
+				f: func(s string) (string, error) {
+					return "[{\"TEST_KEY1\":\"TEST_VALUE1\"},{\"TEST_KEY2\":[true]}]", nil
+				},
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				input := &dynamodb.BatchWriteItemInput{
+					RequestItems: map[string][]types.WriteRequest{
+						"TEST": {
+							{
+								PutRequest: &types.PutRequest{
+									Item: map[string]types.AttributeValue{
+										"TEST_KEY1": &types.AttributeValueMemberS{
+											Value: "TEST_VALUE1",
+										},
+									},
+								},
+							},
+							{
+								PutRequest: &types.PutRequest{
+									Item: map[string]types.AttributeValue{
+										"TEST_KEY2": &types.AttributeValueMemberL{
+											Value: []types.AttributeValue{
+												&types.AttributeValueMemberBOOL{
+													Value: true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				m.BatchWriteItemClient.On("BatchWriteItem", ctx, input).Return(&dynamodb.BatchWriteItemOutput{
+					UnprocessedItems: map[string][]types.WriteRequest{},
+				}, nil)
+
+				return m
+			},
+			wantW: "{\n  \"unprocessed\": []\n}\n",
+		},
+		{
 			name: "Error unmarshal JSON",
 			args: args{
 				ctx:       context.Background(),
@@ -496,6 +578,54 @@ func TestInstance_Put(t *testing.T) {
 				m.BatchWriteItemClient.On("BatchWriteItem", ctx, input).Return(nil, fmt.Errorf("cannot batch write items"))
 
 				return m
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error both item and file is empty",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				f: func(s string) (string, error) {
+					return "", nil
+				},
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				return new(mocks.MockDynamoDBAPI)
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error both item and file is not empty",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				item:      "{\"TEST_KEY1\":\"TEST_VALUE1\"}",
+				fileName:  "TEST.json",
+				f: func(s string) (string, error) {
+					return "", nil
+				},
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				return new(mocks.MockDynamoDBAPI)
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error read file",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				fileName:  "ERROR.json",
+				f: func(s string) (string, error) {
+					return "", fmt.Errorf("cannot read file")
+				},
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				return new(mocks.MockDynamoDBAPI)
 			},
 			wantErr: true,
 		},

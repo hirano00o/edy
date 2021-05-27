@@ -81,9 +81,8 @@ var putOptions = []cli.Flag{
 		Aliases: []string{"i"},
 	},
 	&cli.StringFlag{
-		Name: "input-file",
-		Usage: "Read item to put from json file.\n" +
-			"Use either the --item option or this option.",
+		Name:    "input-file",
+		Usage:   "Read item to put from json file. Use either the --item option or this option.",
 		Aliases: []string{"I"},
 	},
 }
@@ -185,19 +184,20 @@ func cmd(w io.Writer) cli.ActionFunc {
 				ctx.String("projection"),
 			)
 		case "put":
+			f := func(fileName string) (string, error) {
+				b, err := ioutil.ReadFile(fileName)
+				if err != nil {
+					return "", nil
+				}
+				return string(b), nil
+			}
 			return newEdyClient(c).Put(
 				ctx.Context,
 				w,
 				ctx.String("table-name"),
 				ctx.String("item"),
 				ctx.String("input-file"),
-				func(fileName string) (string, error) {
-					b, err := ioutil.ReadFile(fileName)
-					if err != nil {
-						return "", nil
-					}
-					return string(b), nil
-				},
+				f,
 			)
 		case "delete":
 			return newEdyClient(c).Delete(
