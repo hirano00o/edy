@@ -1,0 +1,24 @@
+[
+  {
+    "ID": 15,
+    "Name": "Mallet",
+    "Email": "mallet@example.com",
+    "Age": 20,
+    "Birthday": {
+      "Year": 2001,
+      "Month": 8,
+      "Day": 31
+    }
+  },
+  {
+    "ID": 16,
+    "Name": "Marvin",
+    "Email": "marvin@example.com",
+    "Age": 21,
+    "Birthday": {
+      "Year": 2002,
+      "Month": 8,
+      "Day": 20
+    }
+  }
+]
