@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -113,9 +115,17 @@ func getValueFromRequestItems(jsonItem map[string]interface{}) (*dynamoDBValue, 
 	for k := range jsonItem {
 		switch {
 		case k == "partition":
-			partitionValue = jsonItem[k].(string)
+			if reflect.TypeOf(jsonItem[k]).Kind() == reflect.Float64 {
+				partitionValue = strconv.FormatFloat(jsonItem[k].(float64), 'f', -1, 64)
+			} else {
+				partitionValue = jsonItem[k].(string)
+			}
 		case k == "sort":
-			sortValue = jsonItem[k].(string)
+			if reflect.TypeOf(jsonItem[k]).Kind() == reflect.Float64 {
+				sortValue = strconv.FormatFloat(jsonItem[k].(float64), 'f', -1, 64)
+			} else {
+				sortValue = jsonItem[k].(string)
+			}
 		default:
 			return nil, fmt.Errorf("unknown key specified: %v", k)
 		}
