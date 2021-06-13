@@ -89,15 +89,19 @@ var putOptions = []cli.Flag{
 
 var deleteOptions = []cli.Flag{
 	&cli.StringFlag{
-		Name:     "partition",
-		Usage:    "The value of partition key.",
-		Aliases:  []string{"p"},
-		Required: true,
+		Name:    "partition",
+		Usage:   "The value of partition key.",
+		Aliases: []string{"p"},
 	},
 	&cli.StringFlag{
 		Name:    "sort",
 		Usage:   "The value and sort key.",
 		Aliases: []string{"s"},
+	},
+	&cli.StringFlag{
+		Name:    "input-file",
+		Usage:   "Read item to delete from json file. Use either the --partition (and --sort) option or this option.",
+		Aliases: []string{"I"},
 	},
 }
 
