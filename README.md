@@ -167,10 +167,35 @@ $ edy put --table-name User --item '[{"ID":3, "Name":"Alice", "Interest":{"SNS":
 
 ### delete
 
-The `delete` command behaves similarly to `aws dynamodb delete-item`.
+The `delete` command behaves similarly to `aws dynamodb batch-write-item` (only DeleteRequest).
 
 ```console
 $ edy delete --table-name User --partition 1 --sort "Alice" # Shortened version: edy del -t User -p 1 -s Alice
+{
+  "unprocessed": []
+}
+```
+
+If you want to delete multiple matching records at once, you should use `--input-file` option. The input file format is json.
+You specify `partition` key or `partition` and `sort` keys.
+Example is as follows.
+
+```json
+[
+  {
+    "partition": 1,
+    "sort": "Alice"
+  },
+  {
+    "partition": 2
+  }
+]
+```
+
+When you saved the above to delete.json, execute as follows.
+
+```console
+$ edy delete --table-name User --input-file delete.json # Shortened version: edy del -t User --input-file delete.json
 {
   "unprocessed": []
 }

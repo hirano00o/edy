@@ -161,6 +161,13 @@ func cmd(w io.Writer) cli.ActionFunc {
 		if err != nil {
 			return err
 		}
+		f := func(fileName string) (string, error) {
+			b, err := ioutil.ReadFile(fileName)
+			if err != nil {
+				return "", nil
+			}
+			return string(b), nil
+		}
 		switch ctx.Command.Name {
 		case "describe":
 			return newEdyClient(c).DescribeTable(ctx.Context, w, ctx.String("table-name"))
@@ -184,13 +191,6 @@ func cmd(w io.Writer) cli.ActionFunc {
 				ctx.String("projection"),
 			)
 		case "put":
-			f := func(fileName string) (string, error) {
-				b, err := ioutil.ReadFile(fileName)
-				if err != nil {
-					return "", nil
-				}
-				return string(b), nil
-			}
 			return newEdyClient(c).Put(
 				ctx.Context,
 				w,
@@ -206,6 +206,8 @@ func cmd(w io.Writer) cli.ActionFunc {
 				ctx.String("table-name"),
 				ctx.String("partition"),
 				ctx.String("sort"),
+				ctx.String("input-file"),
+				f,
 			)
 		default:
 			return nil

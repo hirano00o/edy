@@ -157,7 +157,7 @@ func parseJSON(item string) (interface{}, error) {
 	return jsonItem, nil
 }
 
-func analyseItem(item string) (interface{}, error) {
+func analysePutRequestItem(item string) (interface{}, error) {
 	var jsonItem interface{}
 	var err error
 	jsonItem, err = parseJSON(item)
@@ -249,7 +249,7 @@ func (i *Instance) Put(
 			return err
 		}
 	}
-	requestItem, err := analyseItem(item)
+	requestItem, err := analysePutRequestItem(item)
 	if err != nil {
 		return err
 	}
