@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -644,6 +645,70 @@ func TestInstance_Put(t *testing.T) {
 			}
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("Put() gotW = %v, want %v", gotW, tt.wantW)
+			}
+		})
+	}
+}
+
+func Test_parseJSON(t *testing.T) {
+	type args struct {
+		item string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    interface{}
+		wantErr bool
+	}{
+		{
+			name: "Parse list JSON",
+			args: args{
+				item: "[{\"TEST_KEY1\":\"TEST_VALUE1\"}," +
+					"{\"TEST_KEY2\":\"TEST_VALUE2\", \"TEST_KEY3\":[\"TEST_VALUE31\",32,true]}]",
+			},
+			want: []map[string]interface{}{
+				{
+					"TEST_KEY1": "TEST_VALUE1",
+				},
+				{
+					"TEST_KEY2": "TEST_VALUE2",
+					"TEST_KEY3": []interface{}{"TEST_VALUE31", float64(32), true},
+				},
+			},
+		},
+		{
+			name: "Parse non list JSON",
+			args: args{
+				item: "{\"TEST_KEY1\":\"TEST_VALUE1\"}",
+			},
+			want: map[string]interface{}{
+				"TEST_KEY1": "TEST_VALUE1",
+			},
+		},
+		{
+			name: "Error parse list JSON",
+			args: args{
+				item: "[{\"TEST_KEY1\"\"TEST_VALUE1\"}]",
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error parse non list JSON",
+			args: args{
+				item: "{\"TEST_KEY1\"\"TEST_VALUE1\"}",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseJSON(tt.args.item)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseJSON() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseJSON() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
