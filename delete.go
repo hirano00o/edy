@@ -113,19 +113,18 @@ func analyseDeleteRequestItem(requestJSONStr string) ([]*dynamoDBValue, error) {
 func getValueFromRequestItems(jsonItem map[string]interface{}) (*dynamoDBValue, error) {
 	var partitionValue, sortValue string
 	for k := range jsonItem {
+		var v string
+		// Primary key is allowed string, number, byte.
+		if reflect.TypeOf(jsonItem[k]).Kind() == reflect.Float64 {
+			v = strconv.FormatFloat(jsonItem[k].(float64), 'f', -1, 64)
+		} else {
+			v = jsonItem[k].(string)
+		}
 		switch {
 		case k == "partition":
-			if reflect.TypeOf(jsonItem[k]).Kind() == reflect.Float64 {
-				partitionValue = strconv.FormatFloat(jsonItem[k].(float64), 'f', -1, 64)
-			} else {
-				partitionValue = jsonItem[k].(string)
-			}
+			partitionValue = v
 		case k == "sort":
-			if reflect.TypeOf(jsonItem[k]).Kind() == reflect.Float64 {
-				sortValue = strconv.FormatFloat(jsonItem[k].(float64), 'f', -1, 64)
-			} else {
-				sortValue = jsonItem[k].(string)
-			}
+			sortValue = v
 		default:
 			return nil, fmt.Errorf("unknown key specified: %v", k)
 		}
