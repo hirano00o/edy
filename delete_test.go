@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -521,6 +522,97 @@ func TestInstance_Delete(t *testing.T) {
 			}
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("Delete() gotW = %v, want %v", gotW, tt.wantW)
+			}
+		})
+	}
+}
+
+func Test_analyseDeleteRequestItem(t *testing.T) {
+	type args struct {
+		requestJSONStr string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []*dynamoDBValue
+		wantErr bool
+	}{
+		{
+			name: "JSON starting with list",
+			args: args{
+				requestJSONStr: "[" +
+					"{\"partition\":\"TEST_VALUE11\", \"sort\":12}," +
+					"{\"partition\":\"TEST_VALUE21\", \"sort\":22}" +
+					"]",
+			},
+			want: []*dynamoDBValue{
+				{
+					partitionValue: "TEST_VALUE11",
+					sortValue:      "12",
+				},
+				{
+					partitionValue: "TEST_VALUE21",
+					sortValue:      "22",
+				},
+			},
+		},
+		{
+			name: "JSON",
+			args: args{
+				requestJSONStr: "{\"partition\":\"TEST_VALUE1\", \"sort\":\"TEST_VALUE2\"}",
+			},
+			want: []*dynamoDBValue{
+				{
+					partitionValue: "TEST_VALUE1",
+					sortValue:      "TEST_VALUE2",
+				},
+			},
+		},
+		{
+			name: "Invalid key includes in JSON starting with list",
+			args: args{
+				requestJSONStr: "[{\"INVALID\":\"TEST_VALUE1\", \"sort\":\"TEST_VALUE2\"}]",
+			},
+			wantErr: true,
+		},
+		{
+			name: "Invalid key includes in JSON",
+			args: args{
+				requestJSONStr: "{\"INVALID\":\"TEST_VALUE1\", \"sort\":\"TEST_VALUE2\"}",
+			},
+			wantErr: true,
+		},
+		{
+			name: "Partition value length is zero in JSON starting with list",
+			args: args{
+				requestJSONStr: "[{\"partition\":\"\"}]",
+			},
+			wantErr: true,
+		},
+		{
+			name: "Partition value length is zero in JSON",
+			args: args{
+				requestJSONStr: "{\"partition\":\"\"}",
+			},
+			wantErr: true,
+		},
+		{
+			name: "Invalid JSON",
+			args: args{
+				requestJSONStr: "\"partition\":\"\"}",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := analyseDeleteRequestItem(tt.args.requestJSONStr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("analyseDeleteRequestItem() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("analyseDeleteRequestItem() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
