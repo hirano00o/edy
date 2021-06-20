@@ -1,0 +1,10 @@
+[
+  {
+    "partition": 903,
+    "sort": "DELETE_USER3"
+  },
+  {
+    "partition": 904,
+    "sort": "DELETE_USER4"
+  }
+]

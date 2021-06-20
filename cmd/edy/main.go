@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -79,19 +80,28 @@ var putOptions = []cli.Flag{
 			"\tex. --item '{\"ID\":3,\"Name\":\"Alice\",\"Interest\":{\"SNS\":[\"Twitter\",\"Facebook\"]}}'",
 		Aliases: []string{"i"},
 	},
+	&cli.StringFlag{
+		Name:    "input-file",
+		Usage:   "Read item to put from json file. Use either the --item option or this option.",
+		Aliases: []string{"I"},
+	},
 }
 
 var deleteOptions = []cli.Flag{
 	&cli.StringFlag{
-		Name:     "partition",
-		Usage:    "The value of partition key.",
-		Aliases:  []string{"p"},
-		Required: true,
+		Name:    "partition",
+		Usage:   "The value of partition key.",
+		Aliases: []string{"p"},
 	},
 	&cli.StringFlag{
 		Name:    "sort",
 		Usage:   "The value and sort key.",
 		Aliases: []string{"s"},
+	},
+	&cli.StringFlag{
+		Name:    "input-file",
+		Usage:   "Read item to delete from json file. Use either the --partition (and --sort) option or this option.",
+		Aliases: []string{"I"},
 	},
 }
 
@@ -155,6 +165,13 @@ func cmd(w io.Writer) cli.ActionFunc {
 		if err != nil {
 			return err
 		}
+		f := func(fileName string) (string, error) {
+			b, err := ioutil.ReadFile(fileName)
+			if err != nil {
+				return "", nil
+			}
+			return string(b), nil
+		}
 		switch ctx.Command.Name {
 		case "describe":
 			return newEdyClient(c).DescribeTable(ctx.Context, w, ctx.String("table-name"))
@@ -183,6 +200,8 @@ func cmd(w io.Writer) cli.ActionFunc {
 				w,
 				ctx.String("table-name"),
 				ctx.String("item"),
+				ctx.String("input-file"),
+				f,
 			)
 		case "delete":
 			return newEdyClient(c).Delete(
@@ -191,6 +210,8 @@ func cmd(w io.Writer) cli.ActionFunc {
 				ctx.String("table-name"),
 				ctx.String("partition"),
 				ctx.String("sort"),
+				ctx.String("input-file"),
+				f,
 			)
 		default:
 			return nil

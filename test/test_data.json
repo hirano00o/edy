@@ -362,13 +362,58 @@
       "PutRequest": {
         "Item": {
           "ID": {
-            "N": "99"
+            "N": "901"
           },
           "Name": {
-            "S": "DELETE_USER"
+            "S": "DELETE_USER1"
           },
           "Email": {
-            "S": "delet_user@example.com"
+            "S": "delet_user1@example.com"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "ID": {
+            "N": "902"
+          },
+          "Name": {
+            "S": "DELETE_USER2"
+          },
+          "Email": {
+            "S": "delet_user2@example.com"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "ID": {
+            "N": "903"
+          },
+          "Name": {
+            "S": "DELETE_USER3"
+          },
+          "Email": {
+            "S": "delet_user3@example.com"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "ID": {
+            "N": "904"
+          },
+          "Name": {
+            "S": "DELETE_USER4"
+          },
+          "Email": {
+            "S": "delet_user4@example.com"
           }
         }
       }

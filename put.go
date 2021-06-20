@@ -137,24 +137,40 @@ func recursiveAnalyseJSON(items map[string]interface{}) (map[string]types.Attrib
 	return m, nil
 }
 
-func analyseItem(item string) (interface{}, error) {
+func parseJSON(item string) (interface{}, error) {
 	var jsonItem map[string]interface{}
 	var jsonItems []map[string]interface{}
 	var err error
+
 	if strings.HasPrefix(item, "[") {
 		err = json.Unmarshal(bytes.NewBufferString(item).Bytes(), &jsonItems)
-	} else {
-		err = json.Unmarshal(bytes.NewBufferString(item).Bytes(), &jsonItem)
+		if err != nil {
+			return nil, fmt.Errorf("invalid json format: %v", err)
+		}
+		return jsonItems, nil
 	}
+
+	err = json.Unmarshal(bytes.NewBufferString(item).Bytes(), &jsonItem)
 	if err != nil {
 		return nil, fmt.Errorf("invalid json format: %v", err)
 	}
+	return jsonItem, nil
+}
 
-	if jsonItems != nil {
-		putItems := make([]types.WriteRequest, len(jsonItems))
+func analysePutRequestItem(item string) (interface{}, error) {
+	var jsonItem interface{}
+	var err error
+	jsonItem, err = parseJSON(item)
+	if err != nil {
+		return nil, err
+	}
+
+	switch j := jsonItem.(type) {
+	case []map[string]interface{}:
+		putItems := make([]types.WriteRequest, len(j))
 		var res map[string]types.AttributeValue
-		for i := range jsonItems {
-			res, err = recursiveAnalyseJSON(jsonItems[i])
+		for i := range j {
+			res, err = recursiveAnalyseJSON(j[i])
 			if err != nil {
 				return nil, err
 			}
@@ -165,34 +181,32 @@ func analyseItem(item string) (interface{}, error) {
 			}
 		}
 		return putItems, nil
+	case map[string]interface{}:
+		return recursiveAnalyseJSON(j)
+	default:
+		return nil, fmt.Errorf("unknown error: %v", item)
 	}
-
-	return recursiveAnalyseJSON(jsonItem)
 }
 
-func putItems(ctx context.Context, tableName, item string) (map[string]interface{}, error) {
+func putItems(ctx context.Context, tableName string, requestItem interface{}) (map[string]interface{}, error) {
 	cli := ctx.Value(newClientKey).(client.DynamoDB)
 
-	i, err := analyseItem(item)
-	if err != nil {
-		return nil, err
-	}
-
-	if reflect.TypeOf(i).Kind() == reflect.Map {
+	if reflect.TypeOf(requestItem).Kind() == reflect.Map {
 		input := &dynamodb.PutItemInput{
 			TableName: aws.String(tableName),
-			Item:      i.(map[string]types.AttributeValue),
+			Item:      requestItem.(map[string]types.AttributeValue),
 		}
-		_, err = cli.PutItem(ctx, input)
+		_, err := cli.PutItem(ctx, input)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		var res *dynamodb.BatchWriteItemOutput
+		var err error
 		var unprocessedCount int
 		input := &dynamodb.BatchWriteItemInput{
 			RequestItems: map[string][]types.WriteRequest{
-				tableName: i.([]types.WriteRequest),
+				tableName: requestItem.([]types.WriteRequest),
 			},
 		}
 		for i := 0; i < 1+model.RetryMax; i++ {
@@ -215,11 +229,35 @@ func putItems(ctx context.Context, tableName, item string) (map[string]interface
 	return map[string]interface{}{"unprocessed": []string{}}, nil
 }
 
-func (i *Instance) Put(ctx context.Context, w io.Writer, tableName, item string) error {
+func (i *Instance) Put(
+	ctx context.Context,
+	w io.Writer,
+	tableName,
+	item,
+	fileName string,
+	f func(string) (string, error),
+) error {
+	switch {
+	case len(item) == 0 && len(fileName) == 0:
+		return fmt.Errorf("required either --item or --input-file option")
+	case len(item) != 0 && len(fileName) != 0:
+		return fmt.Errorf("use either --item or --input-file option")
+	case len(fileName) != 0:
+		var err error
+		item, err = f(fileName)
+		if err != nil {
+			return err
+		}
+	}
+	requestItem, err := analysePutRequestItem(item)
+	if err != nil {
+		return err
+	}
+
 	cli := i.NewClient.CreateInstance()
 	ctx = context.WithValue(ctx, newClientKey, cli)
 
-	res, err := putItems(ctx, tableName, item)
+	res, err := putItems(ctx, tableName, requestItem)
 	if err != nil {
 		return err
 	}

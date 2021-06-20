@@ -24,8 +24,16 @@ type Edy interface {
 		projection string,
 	) error
 	DescribeTable(ctx context.Context, w io.Writer, tableName string) error
-	Put(ctx context.Context, w io.Writer, tableName, item string) error
-	Delete(ctx context.Context, w io.Writer, tableName, partitionValue, sortValue string) error
+	Put(ctx context.Context, w io.Writer, tableName, item, fileName string, f func(string) (string, error)) error
+	Delete(
+		ctx context.Context,
+		w io.Writer,
+		tableName,
+		partitionValue,
+		sortValue,
+		fileName string,
+		f func(string) (string, error),
+	) error
 }
 
 type Instance struct {

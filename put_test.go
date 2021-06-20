@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -19,6 +20,8 @@ func TestInstance_Put(t *testing.T) {
 		ctx       context.Context
 		tableName string
 		item      string
+		fileName  string
+		f         func(string) (string, error)
 	}
 	tests := []struct {
 		name    string
@@ -421,6 +424,88 @@ func TestInstance_Put(t *testing.T) {
 				"}\n",
 		},
 		{
+			name: "Put item from file",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				fileName:  "TEST.json",
+				f: func(s string) (string, error) {
+					return "{\"TEST_KEY1\":\"TEST_VALUE1\"}", nil
+				},
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				input := &dynamodb.PutItemInput{
+					TableName: aws.String("TEST"),
+					Item: map[string]types.AttributeValue{
+						"TEST_KEY1": &types.AttributeValueMemberS{
+							Value: "TEST_VALUE1",
+						},
+					},
+				}
+				m.PutItemClient.On("PutItem", ctx, input).Return(&dynamodb.PutItemOutput{}, nil)
+
+				return m
+			},
+			wantW: "{\n  \"unprocessed\": []\n}\n",
+		},
+		{
+			name: "Put items from file",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				fileName:  "TEST.json",
+				f: func(s string) (string, error) {
+					return "[{\"TEST_KEY1\":\"TEST_VALUE1\"},{\"TEST_KEY2\":[true]}]", nil
+				},
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+
+				m := new(mocks.MockDynamoDBAPI)
+				ctx = context.WithValue(ctx, newClientKey, m)
+				m.On("CreateInstance").Return(m)
+				input := &dynamodb.BatchWriteItemInput{
+					RequestItems: map[string][]types.WriteRequest{
+						"TEST": {
+							{
+								PutRequest: &types.PutRequest{
+									Item: map[string]types.AttributeValue{
+										"TEST_KEY1": &types.AttributeValueMemberS{
+											Value: "TEST_VALUE1",
+										},
+									},
+								},
+							},
+							{
+								PutRequest: &types.PutRequest{
+									Item: map[string]types.AttributeValue{
+										"TEST_KEY2": &types.AttributeValueMemberL{
+											Value: []types.AttributeValue{
+												&types.AttributeValueMemberBOOL{
+													Value: true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				m.BatchWriteItemClient.On("BatchWriteItem", ctx, input).Return(&dynamodb.BatchWriteItemOutput{
+					UnprocessedItems: map[string][]types.WriteRequest{},
+				}, nil)
+
+				return m
+			},
+			wantW: "{\n  \"unprocessed\": []\n}\n",
+		},
+		{
 			name: "Error unmarshal JSON",
 			args: args{
 				ctx:       context.Background(),
@@ -431,7 +516,6 @@ func TestInstance_Put(t *testing.T) {
 				t.Helper()
 
 				m := new(mocks.MockDynamoDBAPI)
-				m.On("CreateInstance").Return(m)
 
 				return m
 			},
@@ -498,6 +582,54 @@ func TestInstance_Put(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "Error both item and file is empty",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				f: func(s string) (string, error) {
+					return "", nil
+				},
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				return new(mocks.MockDynamoDBAPI)
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error both item and file is not empty",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				item:      "{\"TEST_KEY1\":\"TEST_VALUE1\"}",
+				fileName:  "TEST.json",
+				f: func(s string) (string, error) {
+					return "", nil
+				},
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				return new(mocks.MockDynamoDBAPI)
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error read file",
+			args: args{
+				ctx:       context.Background(),
+				tableName: "TEST",
+				fileName:  "ERROR.json",
+				f: func(s string) (string, error) {
+					return "", fmt.Errorf("cannot read file")
+				},
+			},
+			mocking: func(t *testing.T, ctx context.Context) *mocks.MockDynamoDBAPI {
+				t.Helper()
+				return new(mocks.MockDynamoDBAPI)
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -506,13 +638,77 @@ func TestInstance_Put(t *testing.T) {
 				NewClient: mock,
 			}
 			w := &bytes.Buffer{}
-			err := i.Put(tt.args.ctx, w, tt.args.tableName, tt.args.item)
+			err := i.Put(tt.args.ctx, w, tt.args.tableName, tt.args.item, tt.args.fileName, tt.args.f)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Put() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("Put() gotW = %v, want %v", gotW, tt.wantW)
+			}
+		})
+	}
+}
+
+func Test_parseJSON(t *testing.T) {
+	type args struct {
+		item string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    interface{}
+		wantErr bool
+	}{
+		{
+			name: "Parse list JSON",
+			args: args{
+				item: "[{\"TEST_KEY1\":\"TEST_VALUE1\"}," +
+					"{\"TEST_KEY2\":\"TEST_VALUE2\", \"TEST_KEY3\":[\"TEST_VALUE31\",32,true]}]",
+			},
+			want: []map[string]interface{}{
+				{
+					"TEST_KEY1": "TEST_VALUE1",
+				},
+				{
+					"TEST_KEY2": "TEST_VALUE2",
+					"TEST_KEY3": []interface{}{"TEST_VALUE31", float64(32), true},
+				},
+			},
+		},
+		{
+			name: "Parse non list JSON",
+			args: args{
+				item: "{\"TEST_KEY1\":\"TEST_VALUE1\"}",
+			},
+			want: map[string]interface{}{
+				"TEST_KEY1": "TEST_VALUE1",
+			},
+		},
+		{
+			name: "Error parse list JSON",
+			args: args{
+				item: "[{\"TEST_KEY1\"\"TEST_VALUE1\"}]",
+			},
+			wantErr: true,
+		},
+		{
+			name: "Error parse non list JSON",
+			args: args{
+				item: "{\"TEST_KEY1\"\"TEST_VALUE1\"}",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseJSON(tt.args.item)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseJSON() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseJSON() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
