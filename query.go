@@ -2,7 +2,6 @@ package edy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -182,7 +181,8 @@ func (i *Instance) Query(
 	sortCondition,
 	filterCondition,
 	index,
-	projection string,
+	projection,
+	output string,
 ) error {
 	cli := i.NewClient.CreateInstance()
 	ctx = context.WithValue(ctx, newClientKey, cli)
@@ -192,11 +192,11 @@ func (i *Instance) Query(
 		return err
 	}
 
-	b, err := json.MarshalIndent(res, "", strings.Repeat(" ", 2))
+	str, err := adjustSpecifiedFormat(output, res)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "%s\n", string(b))
+	fmt.Fprintf(w, "%s", str)
 
 	return nil
 }

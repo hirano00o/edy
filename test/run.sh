@@ -3,6 +3,7 @@
 SCRIPT_DIR=${1:-$(dirname "$0")}
 
 initialise() {
+  mkdir -p "${SCRIPT_DIR}"/cases/actual
   if ! aws dynamodb create-table \
     --region ap-northeast-1 \
     --table-name User \

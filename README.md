@@ -141,6 +141,8 @@ OPTIONS:
                                    Available operator is =,<=,<,>=,>,between,begins_with,exists,in,contains
    --projection value, --pj value  Identifies and retrieve the attributes that you want.
                                    ex. --projection "Age, Email, Birthplace"
+   --output value, -o value        Output format to show the result.
+                                   Available format is JSON, csv. Default is JSON
    --help, -h                      show help (default: false)
 ```
 

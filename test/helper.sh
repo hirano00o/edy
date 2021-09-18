@@ -5,15 +5,19 @@
 run_such_query_helper() {
   CASE_DIR=${SCRIPT_ROOT_DIR}/cases
   EXPECTED_FILE=${SCRIPT_ROOT_DIR}/cases/expected/${TEST_NAME}.json
-  if ! eval "${SCRIPT_ROOT_DIR}/${CMD}" > "${CASE_DIR}/${TEST_NAME}"_actual.json;
+  if [ ! -e "${EXPECTED_FILE}" ];
+  then
+    EXPECTED_FILE=${SCRIPT_ROOT_DIR}/cases/expected/${TEST_NAME}.csv
+  fi
+  if ! eval "${SCRIPT_ROOT_DIR}/${CMD}" > "${CASE_DIR}/actual/${TEST_NAME}";
   then
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME} failed to execute ${CMD}"
     exit 1
   fi
-  if ! diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json "${EXPECTED_FILE}" > tmp.diff;
+  if ! diff -u "${CASE_DIR}/actual/${TEST_NAME}" "${EXPECTED_FILE}" > tmp.diff;
   then
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME}"
-    sed -e "s@${CASE_DIR}/${TEST_NAME}_actual.json@actual@" -e "s@${EXPECTED_FILE}@expected@" tmp.diff
+    sed -e "s@${CASE_DIR}/actual/${TEST_NAME}@actual@" -e "s@${EXPECTED_FILE}@expected@" tmp.diff
     rm tmp.diff
     exit 1
   fi
@@ -25,25 +29,29 @@ run_such_query_helper() {
 run_such_put_helper() {
   CASE_DIR=${SCRIPT_ROOT_DIR}/cases
   EXPECTED_FILE=${SCRIPT_ROOT_DIR}/cases/expected/${TEST_NAME}.json
-  if ! eval "${SCRIPT_ROOT_DIR}/${CMD}" > "${CASE_DIR}/${TEST_NAME}"_actual.json;
+  if [ ! -e "${EXPECTED_FILE}" ];
+  then
+    EXPECTED_FILE=${SCRIPT_ROOT_DIR}/cases/expected/${TEST_NAME}.csv
+  fi
+  if ! eval "${SCRIPT_ROOT_DIR}/${CMD}" > "${CASE_DIR}/actual/${TEST_NAME}";
   then
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME} failed to execute ${CMD}"
     exit 1
   fi
-  if ! printf "{\n  \"unprocessed\": []\n}\n" | diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json - > tmp.diff;
+  if ! printf "{\n  \"unprocessed\": []\n}\n" | diff -u "${CASE_DIR}/actual/${TEST_NAME}" - > tmp.diff;
   then
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME}"
-    sed -e "s@${CASE_DIR}/${TEST_NAME}_actual.json@actual@" -e "s@+++ -@+++ expected@" tmp.diff
+    sed -e "s@${CASE_DIR}/actual/${TEST_NAME}@actual@" -e "s@+++ -@+++ expected@" tmp.diff
     rm tmp.diff
     exit 1
   fi
 
-  "${SCRIPT_ROOT_DIR}/edy" s -t User -f "${FILTER_CONDITION}" --local 8000 > "${CASE_DIR}/${TEST_NAME}"_actual.json;
+  "${SCRIPT_ROOT_DIR}/edy" s -t User -f "${FILTER_CONDITION}" --local 8000 > "${CASE_DIR}/actual/${TEST_NAME}";
 
-  if ! diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json "${EXPECTED_FILE}" > tmp.diff;
+  if ! diff -u "${CASE_DIR}/actual/${TEST_NAME}" "${EXPECTED_FILE}" > tmp.diff;
   then
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME}"
-    sed -e "s@${CASE_DIR}/${TEST_NAME}_actual.json@actual@" -e "s@${EXPECTED_FILE}@expected@" tmp.diff
+    sed -e "s@${CASE_DIR}/actual/${TEST_NAME}@actual@" -e "s@${EXPECTED_FILE}@expected@" tmp.diff
     rm tmp.diff
     exit 1
   fi
@@ -58,15 +66,15 @@ run_such_delete_helper() {
   BEFORE_ITEM_COUNT=$(aws dynamodb scan --table-name "${TABLE_NAME}" \
     --endpoint-url http://localhost:8000 | jq ".Items | length")
 
-  if ! eval "${SCRIPT_ROOT_DIR}/${CMD}" > "${CASE_DIR}/${TEST_NAME}"_actual.json;
+  if ! eval "${SCRIPT_ROOT_DIR}/${CMD}" > "${CASE_DIR}/actual/${TEST_NAME}";
   then
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME} failed to execute ${CMD}"
     exit 1
   fi
-  if ! printf "{\n  \"unprocessed\": []\n}\n" | diff -u "${CASE_DIR}/${TEST_NAME}"_actual.json - > tmp.diff;
+  if ! printf "{\n  \"unprocessed\": []\n}\n" | diff -u "${CASE_DIR}/actual/${TEST_NAME}" - > tmp.diff;
   then
     printf "\033[31m%s\033[m:\t%s\n" "=== FAILED" "${TEST_NAME}"
-    sed -e "s@${CASE_DIR}/${TEST_NAME}_actual.json@actual@" -e "s@+++ -@+++ expected@" tmp.diff
+    sed -e "s@${CASE_DIR}/actual/${TEST_NAME}@actual@" -e "s@+++ -@+++ expected@" tmp.diff
     rm tmp.diff
     exit 1
   fi

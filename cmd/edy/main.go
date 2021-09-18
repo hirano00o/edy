@@ -72,6 +72,12 @@ var scanQueryOptions = []cli.Flag{
 			"\tex. --projection \"Age, Email, Birthplace\"",
 		Aliases: []string{"pj"},
 	},
+	&cli.StringFlag{
+		Name: "output",
+		Usage: "Output format to show the result.\n" +
+			"\tAvailable format is JSON, csv. Default is JSON",
+		Aliases: []string{"o"},
+	},
 }
 
 var putOptions = []cli.Flag{
@@ -183,6 +189,7 @@ func cmd(w io.Writer) cli.ActionFunc {
 				ctx.String("table-name"),
 				ctx.String("filter"),
 				ctx.String("projection"),
+				ctx.String("output"),
 			)
 		case "query":
 			return newEdyClient(c).Query(
@@ -194,6 +201,7 @@ func cmd(w io.Writer) cli.ActionFunc {
 				ctx.String("filter"),
 				ctx.String("index"),
 				ctx.String("projection"),
+				ctx.String("output"),
 			)
 		case "put":
 			return newEdyClient(c).Put(

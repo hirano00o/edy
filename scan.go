@@ -2,20 +2,17 @@ package edy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"strings"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"io"
 
 	"github.com/hirano00o/edy/client"
 )
 
-func (i *Instance) Scan(ctx context.Context, w io.Writer, tableName, filterCondition, projection string) error {
+func (i *Instance) Scan(ctx context.Context, w io.Writer, tableName, filterCondition, projection, output string) error {
 	cli := i.NewClient.CreateInstance()
 	ctx = context.WithValue(ctx, newClientKey, cli)
 
@@ -24,11 +21,11 @@ func (i *Instance) Scan(ctx context.Context, w io.Writer, tableName, filterCondi
 		return err
 	}
 
-	b, err := json.MarshalIndent(res, "", strings.Repeat(" ", 2))
+	str, err := adjustSpecifiedFormat(output, res)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "%s\n", string(b))
+	fmt.Fprintf(w, "%s", str)
 
 	return nil
 }
