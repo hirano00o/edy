@@ -67,8 +67,9 @@ var scanQueryOptions = []cli.Flag{
 		Aliases: []string{"f"},
 	},
 	&cli.StringFlag{
-		Name:    "projection",
-		Usage:   "Identifies and retrieve the attributes that you want.",
+		Name: "projection",
+		Usage: "Identifies and retrieve the attributes that you want.\n" +
+			"\tex. --projection \"Age, Email, Birthplace\"",
 		Aliases: []string{"pj"},
 	},
 }

@@ -140,6 +140,7 @@ OPTIONS:
                                    ex. --filter "Age,N >= 20 and Email,S in alice@example.com bob@example.com or not Birthplace,S exists"
                                    Available operator is =,<=,<,>=,>,between,begins_with,exists,in,contains
    --projection value, --pj value  Identifies and retrieve the attributes that you want.
+                                   ex. --projection "Age, Email, Birthplace"
    --help, -h                      show help (default: false)
 ```
 
