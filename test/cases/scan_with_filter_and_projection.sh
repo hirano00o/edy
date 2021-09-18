@@ -9,7 +9,7 @@ TEST_NAME=$(basename "$0" | sed "s/\..*//")
 #   --expression-attribute-values "{\":sns\":{\"S\":\"Twitter\"}}" \
 #   --endpoint-url http://localhost:8000
 CMD="edy s -t User -f \"Interest.SNS,S contains Twitter and Interest.Video,SS exists\" \
-  --pj \"Email Address.City\" --local 8000"
+  --pj \"Email, Address.City\" --local 8000"
 
 . "${SCRIPT_ROOT_DIR}"/helper.sh
 

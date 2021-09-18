@@ -136,12 +136,8 @@ func query(
 
 	// Projection
 	if len(projection) != 0 {
-		p := strings.Split(projection, " ")
-		var pj expression.ProjectionBuilder
-		for i := range p {
-			pj = expression.AddNames(pj, expression.Name(p[i]))
-		}
-		builder = builder.WithProjection(pj)
+		pj := analyseProjection(projection)
+		builder = builder.WithProjection(*pj)
 	}
 
 	expr, err := builder.Build()
