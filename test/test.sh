@@ -10,7 +10,6 @@ setup () {
 }
 
 tearDown () {
-  rm -rf "${SCRIPT_DIR}"/edy "${SCRIPT_DIR}"/cases/actual
   docker stop integration_test >/dev/null
   echo ""
   echo "Finished integration test."

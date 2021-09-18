@@ -41,3 +41,5 @@ do
     exit 1
   fi
 done
+
+rm -rf "${SCRIPT_DIR}"/edy "${SCRIPT_DIR}"/cases/actual
