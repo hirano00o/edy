@@ -75,7 +75,7 @@ var scanQueryOptions = []cli.Flag{
 	&cli.StringFlag{
 		Name: "output",
 		Usage: "Output format to show the result.\n" +
-			"Available format is JSON, csv. Default is JSON",
+			"\tAvailable format is JSON, csv. Default is JSON",
 		Aliases: []string{"o"},
 	},
 }
