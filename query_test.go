@@ -174,6 +174,7 @@ func TestInstance_Query(t *testing.T) {
 		filterCondition string
 		index           string
 		projection      string
+		output          string
 	}
 	tests := []struct {
 		name    string
@@ -597,6 +598,7 @@ func TestInstance_Query(t *testing.T) {
 				tt.args.filterCondition,
 				tt.args.index,
 				tt.args.projection,
+				tt.args.output,
 			)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Query() error = %v, wantErr %v", err, tt.wantErr)

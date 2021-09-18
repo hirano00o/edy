@@ -21,6 +21,7 @@ func TestInstance_Scan(t *testing.T) {
 		tableName       string
 		filterCondition string
 		projection      string
+		output          string
 	}
 	tests := []struct {
 		name    string
@@ -215,7 +216,14 @@ func TestInstance_Scan(t *testing.T) {
 				NewClient: mock,
 			}
 			w := &bytes.Buffer{}
-			err := i.Scan(tt.args.ctx, w, tt.args.tableName, tt.args.filterCondition, tt.args.projection)
+			err := i.Scan(
+				tt.args.ctx,
+				w,
+				tt.args.tableName,
+				tt.args.filterCondition,
+				tt.args.projection,
+				tt.args.output,
+			)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Scan() error = %v, wantErr %v", err, tt.wantErr)
 				return
